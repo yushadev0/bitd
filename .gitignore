@@ -1,0 +1,35 @@
+# --- Standart Delphi Gereksizleri ---
+__history/
+__recovery/
+*.dcu
+*.exe
+*.dll
+*.bpl
+*.bcp
+*.dcp
+*.dsk
+*.identcache
+*.local
+*.stat
+*.tvsconfig
+*.map
+*.jdbg
+*.rsm
+
+
+/temp/
+/log/
+/cache/
+*.log
+*.tmp
+
+
+SecretConsts.pas
+MainModule.pas
+MainModule.dfm
+# Not: Eğer ServerModule.dfm içinde görsel tasarım varsa onu ignore etme!
+# Sadece .pas dosyasında şifre varsa onu gizle veya SecretConsts kullanıyorsan sorun yok.
+
+# --- İşletim Sistemi Çöpleri ---
+Thumbs.db
+.DS_Store
