@@ -283,8 +283,7 @@ begin
     RestReq.Client := RestClient;
     RestReq.Response := RestRes;
     RestReq.Method := rmGET;
-    RestReq.AddAuthParameter('Authorization', 'Bearer ' + API_TMDB_TOKEN,
-      pkHTTPHEADER, [poDoNotEncode]);
+    // DİKKAT: Eski kodda token burada döngü dışındaydı, artık içeride!
 
     CountCompleted := 0;
     CountWishlist := 0;
@@ -347,7 +346,10 @@ begin
       end;
 
       RestClient.BaseURL := 'https://api.themoviedb.org/3/tv/' + CurrentTvID;
+
       RestReq.Params.Clear;
+      // ÇÖZÜM BURADA: Token her döngüde yenileniyor
+      RestReq.AddAuthParameter('Authorization', 'Bearer ' + API_TMDB_TOKEN, pkHTTPHEADER, [poDoNotEncode]);
       RestReq.AddParameter('language', 'tr-TR');
       RestReq.Execute;
 
