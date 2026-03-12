@@ -7,7 +7,7 @@ uses
   Controls, Forms, uniGUITypes, uniGUIAbstractClasses,
   uniGUIClasses, uniGUIForm, uniGUIBaseClasses, uniPanel, uniHTMLFrame,
   REST.Client, REST.Types, System.JSON, System.NetEncoding, Math, uniTimer,
-  Data.DB;
+  Data.DB, SecretConsts; // YENİ EKLENDİ: SecretConsts eklendi
 
 type
   TKITAPLARIM_FORM = class(TUniForm)
@@ -177,6 +177,11 @@ begin
           end else begin RawDate := ''; DisplayDate := 'Belirtilmedi'; end;
 
           RestClient.BaseURL := 'https://www.googleapis.com/books/v1/volumes/' + CurrentBookID;
+
+          // YENİ EKLENEN SATIRLAR: Önceki döngüden kalanları temizle ve API Key ekle
+          RestReq.Params.Clear;
+          RestReq.AddParameter('key', API_GOOGLE_BOOKS_KEY);
+
           RestReq.Execute;
 
           if RestRes.StatusCode = 200 then
@@ -285,6 +290,10 @@ begin
   try
     RestReq.Client := RestClient; RestReq.Response := RestRes; RestReq.Method := rmGET;
     RestReq.AddParameter('q', Kelime); RestReq.AddParameter('langRestrict', 'tr'); RestReq.AddParameter('maxResults', '10');
+
+    // YENİ EKLENEN SATIR: API Key ekle
+    RestReq.AddParameter('key', API_GOOGLE_BOOKS_KEY);
+
     RestReq.Execute;
 
     if RestRes.StatusCode = 200 then

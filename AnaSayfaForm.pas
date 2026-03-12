@@ -309,6 +309,10 @@ begin
       RestReq.Client := RestClient; RestReq.Response := RestRes;
       RestClient.BaseURL := 'https://www.googleapis.com/books/v1/volumes/' + CurrentID;
       RestReq.Method := rmGET;
+
+      // YENİ EKLENEN SATIR: Google API Key
+      RestReq.AddParameter('key', API_GOOGLE_BOOKS_KEY);
+
       RestReq.Execute;
 
       if RestRes.StatusCode = 200 then
@@ -503,7 +507,11 @@ begin
             if CurrentID <> '' then begin
               try
                 RestClient.BaseURL := 'https://www.googleapis.com/books/v1/volumes/' + CurrentID;
+
                 RestReq.Params.Clear;
+                // YENİ EKLENEN SATIR: Google API Key
+                RestReq.AddParameter('key', API_GOOGLE_BOOKS_KEY);
+
                 RestReq.Execute;
                 if RestRes.StatusCode = 200 then begin
                   JSONObj := TJSONObject.ParseJSONValue(RestRes.Content) as TJSONObject;
