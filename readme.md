@@ -152,6 +152,7 @@ const
   // Twitch/IGDB Credentials
   API_TWITCH_CLIENT_ID = 'YOUR_TWITCH_CLIENT_ID_HERE';
   API_TWITCH_SECRET = 'YOUR_TWITCH_SECRET_HERE';
+  API_GOOGLE_BOOKS_KEY = 'YOUR_GOOGLE_BOOKS_API_HERE';
   
   // Google App Password (for email notifications)
   GOOGLE_APP_PASS = 'YOUR_GOOGLE_APP_PASSWORD_HERE';
@@ -193,7 +194,8 @@ To fully utilize the application, you must obtain your personal API keys from th
 - `IGDB (via Twitch Developer Console): For Games.`
   <br>Here is the [link](https://www.igdb.com/)
 
-- `Google Books API: No key is strictly required for public queries, but recommended for higher quotas. This project uses public Google Books endpoints and does not require a dedicated API key.`
+- `Google Books API: For Books`
+  <br>Here is the [link](https://developers.google.com/books/docs/v1/using?hl=tr)
 
 ---
 
