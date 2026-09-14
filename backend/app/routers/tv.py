@@ -39,6 +39,7 @@ def _tv_detail(show: dict) -> dict:
         "summary": show.get("overview") or "Bu dizi için bir açıklama bulunmuyor.",
         "seasons": show.get("number_of_seasons"),
         "network": networks[0]["name"] if networks else "--",
+        "trailer_url": tmdb.trailer_search_url(title, "dizi fragman"),
     }
 
 

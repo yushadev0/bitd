@@ -44,6 +44,7 @@ def _movie_detail(movie: dict) -> dict:
         "summary": movie.get("overview") or "Bu film için bir açıklama bulunmuyor.",
         "runtime_minutes": movie.get("runtime") or None,
         "director": director,
+        "trailer_url": tmdb.trailer_search_url(title, "fragman"),
     }
 
 
