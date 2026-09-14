@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Category, SearchResult } from "../api/types";
 import { libraryApi } from "../api/library";
 import { ApiError } from "../api/client";
+import { useToast } from "../context/ToastContext";
 import Modal from "./Modal";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 
 export default function SearchAddModal({ category, defaultWishlist, onClose, onAdded }: Props) {
   const api = libraryApi(category);
+  const toast = useToast();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searched, setSearched] = useState(false);
@@ -42,8 +44,11 @@ export default function SearchAddModal({ category, defaultWishlist, onClose, onA
       await api.add(apiId, wishlist);
       onAdded();
       onClose();
+      toast.show("Kütüphaneye eklendi.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Eklenemedi.");
+      const message = err instanceof ApiError ? err.message : "Eklenemedi.";
+      setError(message);
+      toast.show(message, "error");
     }
   }
 

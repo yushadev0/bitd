@@ -31,6 +31,7 @@ export interface ItemDetail {
   authors?: string[];
   page_count?: number | null;
   preview_link?: string | null;
+  trailer_url?: string;
 }
 
 export interface LibraryItem {

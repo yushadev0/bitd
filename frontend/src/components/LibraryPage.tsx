@@ -27,7 +27,7 @@ export default function LibraryPage({ category, title, completedLabel, wishlistL
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [addTarget, setAddTarget] = useState<"wishlist" | "completed" | null>(null);
-  const [selected, setSelected] = useState<LibraryItem | null>(null);
+  const [selected, setSelected] = useState<{ item: LibraryItem; rect: DOMRect } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +63,7 @@ export default function LibraryPage({ category, title, completedLabel, wishlistL
             items={completed}
             emptyLabel="Henüz tamamlanan bir şey yok."
             onAddClick={() => setAddTarget("completed")}
-            onItemClick={setSelected}
+            onItemClick={(item, rect) => setSelected({ item, rect })}
           />
         )}
       </section>
@@ -80,7 +80,7 @@ export default function LibraryPage({ category, title, completedLabel, wishlistL
             items={wishlist}
             emptyLabel="İstek listen boş."
             onAddClick={() => setAddTarget("wishlist")}
-            onItemClick={setSelected}
+            onItemClick={(item, rect) => setSelected({ item, rect })}
           />
         )}
       </section>
@@ -95,7 +95,13 @@ export default function LibraryPage({ category, title, completedLabel, wishlistL
       )}
 
       {selected && (
-        <DetailModal category={category} item={selected} onClose={() => setSelected(null)} onChanged={load} />
+        <DetailModal
+          category={category}
+          item={selected.item}
+          originRect={selected.rect}
+          onClose={() => setSelected(null)}
+          onChanged={load}
+        />
       )}
     </div>
   );

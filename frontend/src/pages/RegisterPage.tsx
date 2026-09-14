@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../api/client";
+import { useToast } from "../context/ToastContext";
 import AuthShell from "../components/AuthShell";
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -27,6 +29,7 @@ export default function RegisterPage() {
     setBusy(true);
     try {
       await register(username, email, password, passwordConfirm);
+      toast.show("Kayıt oluşturuldu! Şimdi giriş yapabilirsin.");
       navigate("/giris");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Kayıt oluşturulamadı.");

@@ -3,9 +3,11 @@ import { useAuth } from "../context/AuthContext";
 import { accountApi } from "../api/account";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
+import { useToast } from "../context/ToastContext";
 
 export default function AccountPage() {
   const { user, setUser, logout } = useAuth();
+  const toast = useToast();
   const [username, setUsername] = useState(user?.kullanici_adi ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function AccountPage() {
       const updated = await accountApi.update({ kullanici_adi: username, email });
       setUser(updated);
       setProfileMsg("Profil güncellendi.");
+      toast.show("Profil güncellendi.");
     } catch (err) {
       setProfileErr(err instanceof ApiError ? err.message : "Güncellenemedi.");
     }
@@ -62,6 +65,7 @@ export default function AccountPage() {
     try {
       await authApi.resetPassword(user.email, pwCode, newPassword);
       setPwMsg("Şifren güncellendi.");
+      toast.show("Şifren güncellendi.");
       setPwStep("idle");
       setPwCode("");
       setNewPassword("");

@@ -5,7 +5,7 @@ interface Props {
   items: LibraryItem[];
   emptyLabel: string;
   onAddClick: () => void;
-  onItemClick: (item: LibraryItem) => void;
+  onItemClick: (item: LibraryItem, rect: DOMRect) => void;
 }
 
 export default function MediaGrid({ items, emptyLabel, onAddClick, onItemClick }: Props) {
@@ -15,7 +15,7 @@ export default function MediaGrid({ items, emptyLabel, onAddClick, onItemClick }
         onClick={onAddClick}
         className="flex aspect-[2/3] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink-300 text-ink-400 transition hover:border-marquee-400 hover:text-marquee-500 dark:border-ink-700 dark:hover:border-marquee-400"
       >
-        <span className="text-2xl leading-none">+</span>
+        <i className="fa-solid fa-plus text-xl" />
         <span className="text-xs font-medium">Ekle</span>
       </button>
 
@@ -26,7 +26,7 @@ export default function MediaGrid({ items, emptyLabel, onAddClick, onItemClick }
       )}
 
       {items.map((item) => (
-        <MediaCard key={item.api_id} item={item} onClick={() => onItemClick(item)} />
+        <MediaCard key={item.api_id} item={item} onClick={(rect) => onItemClick(item, rect)} />
       ))}
     </div>
   );

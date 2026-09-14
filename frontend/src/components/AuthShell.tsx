@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
 const REELS = [
-  { icon: "🎮", label: "Oyunlar" },
-  { icon: "🎬", label: "Filmler" },
-  { icon: "📺", label: "Diziler" },
-  { icon: "📚", label: "Kitaplar" },
+  { icon: "fa-solid fa-gamepad", label: "Oyunlar" },
+  { icon: "fa-solid fa-film", label: "Filmler" },
+  { icon: "fa-solid fa-tv", label: "Diziler" },
+  { icon: "fa-solid fa-book", label: "Kitaplar" },
 ];
 
 export default function AuthShell({ children }: { children: ReactNode }) {
@@ -39,7 +39,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
               key={r.label}
               className="flex flex-1 flex-col items-center gap-1 rounded-xl border border-ink-700/80 bg-ink-900/60 py-3 text-xs text-ink-300"
             >
-              <span className="text-lg">{r.icon}</span>
+              <i className={`${r.icon} text-lg`} />
               {r.label}
             </div>
           ))}

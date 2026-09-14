@@ -2,7 +2,7 @@ import type { LibraryItem } from "../api/types";
 
 interface Props {
   item: LibraryItem;
-  onClick: () => void;
+  onClick: (rect: DOMRect) => void;
 }
 
 export default function MediaCard({ item, onClick }: Props) {
@@ -12,7 +12,7 @@ export default function MediaCard({ item, onClick }: Props) {
 
   return (
     <button
-      onClick={onClick}
+      onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
       className="group relative aspect-[2/3] shrink-0 overflow-hidden rounded-xl border border-ink-200/70 bg-ink-100 text-left shadow-stub transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-ink-800 dark:bg-ink-800"
     >
       {poster ? (

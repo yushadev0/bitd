@@ -19,12 +19,8 @@ export default function Modal({ title, onClose, children }: Props) {
         <div className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-ink-200 dark:bg-ink-700 sm:hidden" />
         <div className="flex shrink-0 items-center justify-between border-b border-ink-100 px-5 py-4 dark:border-ink-800">
           <h2 className="font-display text-2xl text-ink-900 dark:text-ink-50">{title}</h2>
-          <button
-            className="rounded-full p-1.5 text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800"
-            onClick={onClose}
-            aria-label="Kapat"
-          >
-            ✕
+          <button className="icon-btn" onClick={onClose} aria-label="Kapat">
+            <i className="fa-solid fa-xmark" />
           </button>
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
