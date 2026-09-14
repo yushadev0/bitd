@@ -138,4 +138,4 @@ Open-source, for educational and personal use.
 
 ## Contact
 
-Developer: Yuşa Göverdik — https://hasup.net
+Developer: Yuşa Göverdik — https://yusa.app
