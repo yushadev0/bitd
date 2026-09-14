@@ -5,7 +5,7 @@ import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 
 export default function AccountPage() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [username, setUsername] = useState(user?.kullanici_adi ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
@@ -72,12 +72,12 @@ export default function AccountPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6">
-      <h1 className="text-2xl font-bold">Hesabım</h1>
+      <h1 className="font-display text-4xl text-ink-900 dark:text-ink-50">Hesabım</h1>
 
       <section className="card p-5">
-        <h2 className="mb-4 font-semibold">Profil Bilgileri</h2>
-        {profileErr && <p className="mb-3 text-sm text-rose-600">{profileErr}</p>}
-        {profileMsg && <p className="mb-3 text-sm text-emerald-600">{profileMsg}</p>}
+        <h2 className="mb-4 font-semibold text-ink-800 dark:text-ink-100">Profil Bilgileri</h2>
+        {profileErr && <p className="mb-3 text-sm text-stub-500">{profileErr}</p>}
+        {profileMsg && <p className="mb-3 text-sm text-ticket-600 dark:text-ticket-400">{profileMsg}</p>}
         <form onSubmit={handleProfileSubmit} className="flex flex-col gap-4">
           <div>
             <label className="label">Kullanıcı Adı</label>
@@ -94,9 +94,9 @@ export default function AccountPage() {
       </section>
 
       <section className="card p-5">
-        <h2 className="mb-4 font-semibold">Şifre Değiştir</h2>
-        {pwErr && <p className="mb-3 text-sm text-rose-600">{pwErr}</p>}
-        {pwMsg && <p className="mb-3 text-sm text-emerald-600">{pwMsg}</p>}
+        <h2 className="mb-4 font-semibold text-ink-800 dark:text-ink-100">Şifre Değiştir</h2>
+        {pwErr && <p className="mb-3 text-sm text-stub-500">{pwErr}</p>}
+        {pwMsg && <p className="mb-3 text-sm text-ticket-600 dark:text-ticket-400">{pwMsg}</p>}
 
         {pwStep === "idle" && (
           <button className="btn-secondary" onClick={handleSendCode}>
@@ -108,7 +108,13 @@ export default function AccountPage() {
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
             <div>
               <label className="label">Doğrulama Kodu</label>
-              <input className="input" value={pwCode} onChange={(e) => setPwCode(e.target.value)} required />
+              <input
+                className="input tracking-[0.3em]"
+                value={pwCode}
+                onChange={(e) => setPwCode(e.target.value)}
+                required
+                autoFocus
+              />
             </div>
             <button className="btn-primary self-start" type="submit">
               Kodu Doğrula
@@ -127,6 +133,7 @@ export default function AccountPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 minLength={6}
+                autoFocus
               />
             </div>
             <button className="btn-primary self-start" type="submit">
@@ -135,6 +142,10 @@ export default function AccountPage() {
           </form>
         )}
       </section>
+
+      <button className="btn-danger self-start sm:hidden" onClick={logout}>
+        Çıkış Yap
+      </button>
     </div>
   );
 }

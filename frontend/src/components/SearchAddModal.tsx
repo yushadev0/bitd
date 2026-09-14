@@ -15,6 +15,7 @@ export default function SearchAddModal({ category, defaultWishlist, onClose, onA
   const api = libraryApi(category);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [searched, setSearched] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wishlist, setWishlist] = useState(defaultWishlist);
@@ -27,6 +28,7 @@ export default function SearchAddModal({ category, defaultWishlist, onClose, onA
     try {
       const items = await api.search(query.trim());
       setResults(items);
+      setSearched(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Arama başarısız oldu.");
     } finally {
@@ -55,42 +57,57 @@ export default function SearchAddModal({ category, defaultWishlist, onClose, onA
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
         />
-        <button className="btn-primary" type="submit" disabled={searching}>
-          Ara
+        <button className="btn-primary shrink-0" type="submit" disabled={searching}>
+          {searching ? "…" : "Ara"}
         </button>
       </form>
 
-      <div className="mb-4 flex gap-4 text-sm">
-        <label className="flex items-center gap-2">
-          <input type="radio" checked={wishlist} onChange={() => setWishlist(true)} />
+      <div className="mb-4 inline-flex rounded-full bg-ink-100 p-1 text-sm dark:bg-ink-800">
+        <button
+          type="button"
+          onClick={() => setWishlist(true)}
+          className={`rounded-full px-3.5 py-1.5 font-medium transition ${
+            wishlist ? "bg-white text-ink-900 shadow-sm dark:bg-ink-950 dark:text-ink-50" : "text-ink-500"
+          }`}
+        >
           İstek listesine ekle
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="radio" checked={!wishlist} onChange={() => setWishlist(false)} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setWishlist(false)}
+          className={`rounded-full px-3.5 py-1.5 font-medium transition ${
+            !wishlist ? "bg-white text-ink-900 shadow-sm dark:bg-ink-950 dark:text-ink-50" : "text-ink-500"
+          }`}
+        >
           Tamamlandı olarak ekle
-        </label>
+        </button>
       </div>
 
-      {error && <p className="mb-3 text-sm text-rose-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-stub-500">{error}</p>}
 
-      <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+      <div className="flex flex-col gap-2">
         {results.map((r) => (
-          <div key={r.api_id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-2 dark:border-slate-800">
-            <img src={r.poster} alt={r.title} className="h-20 w-14 shrink-0 rounded object-cover" />
+          <div
+            key={r.api_id}
+            className="flex items-center gap-3 rounded-xl border border-ink-100 p-2 dark:border-ink-800"
+          >
+            <img src={r.poster} alt={r.title} className="h-20 w-14 shrink-0 rounded-lg object-cover" />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{r.title}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="truncate font-semibold text-ink-800 dark:text-ink-100">{r.title}</p>
+              <p className="text-xs text-ink-500 dark:text-ink-400">
                 {r.year} · {r.genres.join(", ")}
                 {r.score !== null ? ` · ${r.score}` : ""}
               </p>
             </div>
-            <button className="btn-primary shrink-0" onClick={() => handleAdd(r.api_id)}>
+            <button className="btn-primary shrink-0 !px-4 !py-2 text-xs" onClick={() => handleAdd(r.api_id)}>
               Ekle
             </button>
           </div>
         ))}
         {!searching && results.length === 0 && (
-          <p className="py-6 text-center text-sm text-slate-400">Aramak için bir kelime yaz.</p>
+          <p className="py-8 text-center text-sm text-ink-400">
+            {searched ? "Eşleşen bir sonuç bulunamadı." : "Aramak için bir kelime yaz."}
+          </p>
         )}
       </div>
     </Modal>

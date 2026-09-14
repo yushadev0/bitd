@@ -12,6 +12,16 @@ interface Props {
   wishlistLabel: string;
 }
 
+function SkeletonGrid() {
+  return (
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="aspect-[2/3] animate-pulse rounded-xl bg-ink-100 dark:bg-ink-800" />
+      ))}
+    </div>
+  );
+}
+
 export default function LibraryPage({ category, title, completedLabel, wishlistLabel }: Props) {
   const api = libraryApi(category);
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -38,16 +48,17 @@ export default function LibraryPage({ category, title, completedLabel, wishlistL
   const wishlist = items.filter((i) => i.istek_mi);
 
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold">{title}</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+      <h1 className="font-display text-4xl text-ink-900 dark:text-ink-50">{title}</h1>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          {completedLabel}
-        </h2>
-        {loading ? (
-          <p className="text-sm text-slate-400">Yükleniyor…</p>
-        ) : (
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400">
+            {completedLabel}
+          </h2>
+          <span className="text-xs text-ink-400">{completed.length}</span>
+        </div>
+        {loading ? <SkeletonGrid /> : (
           <MediaGrid
             items={completed}
             emptyLabel="Henüz tamamlanan bir şey yok."
@@ -58,12 +69,13 @@ export default function LibraryPage({ category, title, completedLabel, wishlistL
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          {wishlistLabel}
-        </h2>
-        {loading ? (
-          <p className="text-sm text-slate-400">Yükleniyor…</p>
-        ) : (
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400">
+            {wishlistLabel}
+          </h2>
+          <span className="text-xs text-ink-400">{wishlist.length}</span>
+        </div>
+        {loading ? <SkeletonGrid /> : (
           <MediaGrid
             items={wishlist}
             emptyLabel="İstek listen boş."

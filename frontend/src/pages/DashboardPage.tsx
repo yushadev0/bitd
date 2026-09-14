@@ -24,6 +24,8 @@ function statsFor(stats: DashboardResponse | null, category: Category) {
   }[category];
 }
 
+const TODAY = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardResponse | null>(null);
@@ -34,6 +36,7 @@ export default function DashboardPage() {
     books: [],
   });
   const [randomItem, setRandomItem] = useState<{ category: Category; item: LibraryItem } | null>(null);
+  const [rollingFor, setRollingFor] = useState<Category | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,32 +48,44 @@ export default function DashboardPage() {
 
   async function handleRandom(category: Category) {
     setError(null);
+    setRollingFor(category);
     try {
       const item = await libraryApi(category).random();
       setRandomItem({ category, item });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Rastgele seçim yapılamadı.");
+    } finally {
+      setRollingFor(null);
     }
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold">Hoş geldin, {user?.kullanici_adi}</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Arşivine genel bakış</p>
+    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+      <div className="grain relative overflow-hidden rounded-2xl bg-ink-950 px-6 py-8 text-ink-50 sm:px-10 sm:py-10">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-marquee-400/15 blur-3xl" />
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-400">{TODAY}</p>
+        <h1 className="mt-2 font-display text-4xl leading-none sm:text-5xl">
+          Hoş geldin, {user?.kullanici_adi}
+          <span className="text-marquee-400">.</span>
+        </h1>
+        <p className="mt-3 max-w-md text-sm text-ink-300">Rafına genel bir bakış — bugün ne yapacağına birlikte karar verelim.</p>
       </div>
 
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error && (
+        <div className="rounded-xl border border-stub-500/20 bg-stub-500/10 px-4 py-3 text-sm text-stub-600 dark:text-stub-400">
+          {error}
+        </div>
+      )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {SECTIONS.map(({ category, label, icon }) => {
           const s = statsFor(stats, category);
           return (
-            <div key={category} className="card p-4">
-              <div className="mb-1 text-2xl">{icon}</div>
-              <div className="text-2xl font-bold">{s.total}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
-                {label} (+{s.wishlist} istek)
+            <div key={category} className="card p-4 sm:p-5">
+              <div className="mb-1 text-xl">{icon}</div>
+              <div className="font-display text-4xl leading-none text-ink-900 dark:text-ink-50">{s.total}</div>
+              <div className="mt-1 text-xs text-ink-500 dark:text-ink-400">
+                {label} <span className="text-marquee-500 dark:text-marquee-400">+{s.wishlist} istek</span>
               </div>
             </div>
           );
@@ -80,32 +95,38 @@ export default function DashboardPage() {
       {SECTIONS.map(({ category, label, icon, link, diceLabel }) => (
         <section key={category}>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+            <h2 className="font-display text-2xl text-ink-900 dark:text-ink-50">
               {icon} {label}
             </h2>
-            <Link to={link} className="text-sm text-brand-600 hover:underline">
+            <Link to={link} className="text-sm font-medium text-marquee-600 hover:underline dark:text-marquee-400">
               Tümünü Gör
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
             <button
               onClick={() => handleRandom(category)}
-              className="flex aspect-[2/3] flex-col items-center justify-center gap-2 rounded-lg border border-brand-200 bg-brand-50 p-2 text-center text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-300"
+              disabled={rollingFor === category}
+              className="flex aspect-[2/3] w-28 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-xl border border-marquee-400/40 bg-marquee-400/10 p-3 text-center text-xs font-semibold text-marquee-600 transition hover:bg-marquee-400/20 disabled:opacity-70 dark:text-marquee-300 sm:w-32"
             >
-              <span className="text-2xl">🎲</span>
+              <span className={`text-2xl ${rollingFor === category ? "animate-spin" : ""}`}>🎲</span>
               {diceLabel}
             </button>
+
             {recent[category].length === 0 && (
-              <div className="col-span-full flex items-center justify-center py-4 text-sm text-slate-400 sm:col-span-2 md:col-span-3 lg:col-span-5">
+              <div className="flex w-64 shrink-0 items-center rounded-xl border border-dashed border-ink-200 px-4 text-sm text-ink-400 dark:border-ink-800">
                 Henüz {label.toLowerCase()} eklemedin.{" "}
-                <Link to={link} className="ml-1 text-brand-600 hover:underline">
+                <Link to={link} className="ml-1 font-medium text-marquee-600 hover:underline dark:text-marquee-400">
                   Kütüphaneye git
                 </Link>
               </div>
             )}
+
             {recent[category].map((r) => (
-              <div key={r.api_id} className="aspect-[2/3] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-                <img src={r.poster} alt={r.title} className="h-full w-full object-cover" />
+              <div
+                key={r.api_id}
+                className="aspect-[2/3] w-28 shrink-0 snap-start overflow-hidden rounded-xl border border-ink-200/70 shadow-stub dark:border-ink-800 sm:w-32"
+              >
+                <img src={r.poster} alt={r.title} className="h-full w-full object-cover" loading="lazy" />
               </div>
             ))}
           </div>

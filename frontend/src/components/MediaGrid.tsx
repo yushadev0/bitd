@@ -10,17 +10,17 @@ interface Props {
 
 export default function MediaGrid({ items, emptyLabel, onAddClick, onItemClick }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       <button
         onClick={onAddClick}
-        className="flex aspect-[2/3] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 text-slate-400 transition hover:border-brand-500 hover:text-brand-600 dark:border-slate-700"
+        className="flex aspect-[2/3] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink-300 text-ink-400 transition hover:border-marquee-400 hover:text-marquee-500 dark:border-ink-700 dark:hover:border-marquee-400"
       >
-        <span className="text-3xl">+</span>
-        <span className="text-xs">Ekle</span>
+        <span className="text-2xl leading-none">+</span>
+        <span className="text-xs font-medium">Ekle</span>
       </button>
 
       {items.length === 0 && (
-        <div className="col-span-full flex items-center justify-center py-6 text-sm text-slate-400 sm:col-span-2 md:col-span-3 lg:col-span-4">
+        <div className="col-span-2 flex items-center px-2 text-sm text-ink-400 sm:col-span-3 md:col-span-4 lg:col-span-5">
           {emptyLabel}
         </div>
       )}

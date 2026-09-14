@@ -7,34 +7,96 @@
     color-scheme: light dark;
   }
   body {
-    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+    @apply bg-ink-50 text-ink-800 dark:bg-ink-950 dark:text-ink-100;
+    font-feature-settings: "ss01";
+  }
+  ::selection {
+    @apply bg-marquee-400/30;
+  }
+  :focus-visible {
+    outline: 2px solid theme("colors.marquee.400");
+    outline-offset: 2px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-300 dark:bg-ink-700;
+    border-radius: 999px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
+  /* Marquee display type — used sparingly for real headings, not small labels. */
+  .font-display {
+    font-family: "Bebas Neue", sans-serif;
+    letter-spacing: 0.02em;
+  }
+
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition
-      focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition
+      active:scale-[0.97] focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 dark:focus:ring-offset-slate-950;
+    @apply btn bg-marquee-400 text-ink-950 shadow-[0_6px_20px_-6px_rgba(232,163,61,0.7)]
+      hover:bg-marquee-300 active:bg-marquee-500;
   }
   .btn-secondary {
-    @apply btn bg-slate-200 text-slate-800 hover:bg-slate-300 focus:ring-slate-400
-      dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-950;
+    @apply btn bg-ink-100 text-ink-700 hover:bg-ink-200
+      dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700;
   }
   .btn-danger {
-    @apply btn bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500 dark:focus:ring-offset-slate-950;
+    @apply btn bg-stub-500 text-ink-50 hover:bg-stub-600;
   }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-500 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800;
+  }
+
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900;
+    @apply rounded-2xl border border-ink-200/70 bg-white shadow-stub dark:border-ink-800 dark:bg-ink-900;
   }
+
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-      placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500
-      dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-800
+      placeholder:text-ink-400 focus:border-marquee-400 focus:outline-none focus:ring-2 focus:ring-marquee-400/30
+      dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100;
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300;
+    @apply mb-1.5 block text-sm font-medium text-ink-600 dark:text-ink-300;
+  }
+
+  /* A stamped, ticket-like tag used for genres/meta chips — pair with border and text color utilities. */
+  .stamp {
+    @apply inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium;
+  }
+
+  /* Subtle film-grain texture for hero surfaces — CSS only, no asset. */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.5;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 3px 3px;
   }
 }
