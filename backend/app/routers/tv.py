@@ -1,11 +1,11 @@
 import datetime as dt
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.database import get_db
+from app.database import get_db, random_order
 from app.deps import get_current_user
 from app.external import tmdb
 from app.placeholder import placeholder_poster
@@ -87,7 +87,7 @@ async def random_tv(
     row = db.scalar(
         select(models.KullaniciDizi)
         .where(models.KullaniciDizi.kullanici_id == user.id, models.KullaniciDizi.istek_mi.is_(True))
-        .order_by(func.random())
+        .order_by(random_order())
     )
     if not row:
         raise HTTPException(404, "İzleme listeniz boş.")

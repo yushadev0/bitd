@@ -7,8 +7,13 @@ export class ApiError extends Error {
   }
 }
 
+// When built with `vite build --base=/bitd/` (server deploy under a path prefix),
+// BASE_URL is "/bitd/"; locally (root deploy) it's "/". Every call site below writes
+// root-relative "/api/..." paths, so this is the one place that adapts them.
+const API_ROOT = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_ROOT}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",

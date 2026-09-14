@@ -17,6 +17,12 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: str = "http://localhost:5173"
+    cookie_secure: bool = False
+
+    # Prefix to prepend to URLs this API generates for the browser to fetch back
+    # (e.g. the TMDB image proxy) — empty at the domain root, "/bitd" when the
+    # frontend is served under https://yusa.app/bitd/.
+    public_path_prefix: str = ""
 
     # External APIs
     tmdb_token: str = ""

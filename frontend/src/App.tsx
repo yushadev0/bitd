@@ -12,9 +12,12 @@ import TvPage from "./pages/TvPage";
 import BooksPage from "./pages/BooksPage";
 import AccountPage from "./pages/AccountPage";
 
+// "/" locally (root deploy), "/bitd" when built with --base=/bitd/ for the server.
+const basename = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ToastProvider>
         <AuthProvider>
           <Routes>

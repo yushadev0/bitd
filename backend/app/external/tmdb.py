@@ -102,7 +102,7 @@ def movie_poster_url(poster_path: str | None) -> str | None:
     if not poster_path:
         return None
     original = f"https://image.tmdb.org/t/p/w500{poster_path}"
-    return f"/api/image-proxy?src={quote(original, safe='')}"
+    return f"{settings.public_path_prefix}/api/image-proxy?src={quote(original, safe='')}"
 
 
 def trailer_search_url(title: str, suffix: str) -> str:

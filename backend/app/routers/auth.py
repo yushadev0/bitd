@@ -21,7 +21,7 @@ from app.security import (
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 settings = get_settings()
 
-COOKIE_KWARGS = dict(httponly=True, samesite="lax", secure=False, path="/")
+COOKIE_KWARGS = dict(httponly=True, samesite="lax", secure=settings.cookie_secure, path="/")
 
 
 def _set_session_cookies(response: Response, user: models.Kullanici, remember: bool) -> None:

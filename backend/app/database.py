@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import get_settings
@@ -19,3 +19,8 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def random_order():
+    """ORDER BY expression for a random row — RANDOM() on Postgres, NEWID() on SQL Server."""
+    return func.newid() if engine.dialect.name == "mssql" else func.random()
