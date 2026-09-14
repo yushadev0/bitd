@@ -89,6 +89,91 @@
     @apply inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium;
   }
 
+  /* Shimmering loading placeholder — a moving highlight band, not a flat opacity pulse. */
+  .skeleton {
+    @apply animate-shimmer rounded-xl bg-ink-100 dark:bg-ink-800;
+    background-image: linear-gradient(100deg, transparent 35%, rgba(0, 0, 0, 0.06) 50%, transparent 65%);
+    background-size: 250% 100%;
+  }
+  .dark .skeleton {
+    background-image: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.09) 50%, transparent 65%);
+  }
+
+  /* Flatpickr calendar theming — matches the app's palette instead of its stock look. */
+  .flatpickr-calendar {
+    @apply rounded-2xl border border-ink-200 bg-white p-2 shadow-stub;
+    font-family: "Inter", sans-serif;
+  }
+  .flatpickr-calendar.arrowTop::before,
+  .flatpickr-calendar.arrowTop::after {
+    display: none;
+  }
+  .flatpickr-months .flatpickr-month {
+    color: theme("colors.ink.800");
+    fill: theme("colors.ink.500");
+  }
+  .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .flatpickr-current-month input.cur-year {
+    color: theme("colors.ink.800");
+    font-weight: 600;
+  }
+  .flatpickr-weekday {
+    color: theme("colors.ink.400");
+    font-weight: 600;
+  }
+  .flatpickr-day {
+    color: theme("colors.ink.700");
+    border-radius: theme("borderRadius.lg");
+  }
+  .flatpickr-day.prevMonthDay,
+  .flatpickr-day.nextMonthDay {
+    color: theme("colors.ink.300");
+  }
+  .flatpickr-day.today {
+    border-color: theme("colors.marquee.400");
+  }
+  .flatpickr-day:hover {
+    background: theme("colors.ink.100");
+  }
+  .flatpickr-day.selected,
+  .flatpickr-day.selected:hover {
+    background: theme("colors.marquee.400");
+    border-color: theme("colors.marquee.400");
+    color: theme("colors.ink.950");
+  }
+  .flatpickr-prev-month:hover svg,
+  .flatpickr-next-month:hover svg {
+    fill: theme("colors.marquee.500");
+  }
+
+  .dark .flatpickr-calendar {
+    @apply border-ink-700 bg-ink-900;
+    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+  }
+  .dark .flatpickr-months .flatpickr-month,
+  .dark .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .dark .flatpickr-current-month input.cur-year {
+    color: theme("colors.ink.100");
+    fill: theme("colors.ink.300");
+  }
+  .dark .flatpickr-weekday {
+    color: theme("colors.ink.400");
+  }
+  .dark .flatpickr-day {
+    color: theme("colors.ink.100");
+  }
+  .dark .flatpickr-day.prevMonthDay,
+  .dark .flatpickr-day.nextMonthDay {
+    color: theme("colors.ink.600");
+  }
+  .dark .flatpickr-day:hover {
+    background: theme("colors.ink.800");
+  }
+  .dark .flatpickr-day.selected,
+  .dark .flatpickr-day.selected:hover {
+    color: theme("colors.ink.950");
+  }
+
   /* Subtle film-grain texture for hero surfaces — CSS only, no asset. */
   .grain {
     position: relative;

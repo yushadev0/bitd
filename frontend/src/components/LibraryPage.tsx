@@ -16,7 +16,7 @@ function SkeletonGrid() {
   return (
     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="aspect-[2/3] animate-pulse rounded-xl bg-ink-100 dark:bg-ink-800" />
+        <div key={i} className="skeleton aspect-[2/3]" />
       ))}
     </div>
   );

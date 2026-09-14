@@ -23,9 +23,7 @@ export default function MediaCard({ item, onClick }: Props) {
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
         />
       ) : (
-        <div className="flex h-full w-full animate-pulse items-center justify-center text-xs text-ink-400">
-          Yükleniyor…
-        </div>
+        <div className="skeleton h-full w-full rounded-none" />
       )}
 
       {score !== null && score !== undefined && (

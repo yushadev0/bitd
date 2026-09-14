@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, cubicBezier } from "animejs";
-
-const ENTRANCE_EASE = cubicBezier(0.22, 1, 0.36, 1);
 import type { Category, LibraryItem } from "../api/types";
 import { libraryApi } from "../api/library";
 import { ApiError } from "../api/client";
 import { useToast } from "../context/ToastContext";
+import DatePicker from "./DatePicker";
+
+const ENTRANCE_EASE = cubicBezier(0.22, 1, 0.36, 1);
 
 interface Props {
   category: Category;
@@ -207,8 +208,8 @@ export default function DetailModal({ category, item, originRect, onClose, onCha
           </div>
         </header>
 
-        <div className="grid flex-1 gap-6 overflow-y-auto p-5 lg:grid-cols-[220px_1fr_260px] lg:gap-8">
-          <div className="flex flex-col gap-4">
+        <div className="grid flex-1 gap-6 overflow-y-auto p-5 lg:min-h-0 lg:grid-cols-[220px_1fr_260px] lg:gap-8 lg:overflow-hidden">
+          <div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
             {detail?.poster && (
               <img
                 src={detail.poster}
@@ -262,7 +263,7 @@ export default function DetailModal({ category, item, originRect, onClose, onCha
             </div>
           </div>
 
-          <div className="min-w-0">
+          <div className="min-w-0 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
             <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-400">Açıklama</h3>
             <p className="text-sm leading-relaxed text-ink-600 dark:text-ink-300">
               {detail?.summary ?? "Açıklama bulunamadı."}
@@ -277,16 +278,10 @@ export default function DetailModal({ category, item, originRect, onClose, onCha
             )}
           </div>
 
-          <div className="flex flex-col gap-5 lg:border-l lg:border-ink-100 lg:pl-6 lg:dark:border-ink-800">
+          <div className="flex flex-col gap-5 lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-ink-100 lg:pl-6 lg:dark:border-ink-800">
             <div>
               <label className="label">Bitirme Tarihi</label>
-              <input
-                type="date"
-                className="input"
-                value={date}
-                disabled={item.istek_mi}
-                onChange={(e) => saveDate(e.target.value)}
-              />
+              <DatePicker value={date} onChange={saveDate} disabled={item.istek_mi} />
               {item.istek_mi && <p className="mt-1 text-xs text-ink-400">Önce tamamlandı işaretle.</p>}
             </div>
 

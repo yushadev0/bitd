@@ -85,7 +85,7 @@ export default function DashboardPage() {
             <div key={category} className="card p-4 sm:p-5">
               <i className={`${icon} mb-1 text-lg text-marquee-500 dark:text-marquee-400`} />
               {statsLoading ? (
-                <div className="mt-1 h-9 w-12 animate-pulse rounded bg-ink-100 dark:bg-ink-800" />
+                <div className="skeleton mt-1 h-9 w-12" />
               ) : (
                 <div className="font-display text-4xl leading-none text-ink-900 dark:text-ink-50">{s.total}</div>
               )}
@@ -120,10 +120,7 @@ export default function DashboardPage() {
 
             {recent[category] === null &&
               Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-[2/3] w-28 shrink-0 animate-pulse rounded-xl bg-ink-100 dark:bg-ink-800 sm:w-32"
-                />
+                <div key={i} className="skeleton aspect-[2/3] w-28 shrink-0 sm:w-32" />
               ))}
 
             {recent[category]?.length === 0 && (
