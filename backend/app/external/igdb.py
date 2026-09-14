@@ -3,6 +3,7 @@ import time
 import httpx
 
 from app.config import get_settings
+from app.external.retry import with_retry
 
 settings = get_settings()
 
@@ -14,17 +15,20 @@ async def _get_access_token() -> str:
     if _token_cache["access_token"] and _token_cache["expires_at"] > now + 30:
         return _token_cache["access_token"]
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            "https://id.twitch.tv/oauth2/token",
-            params={
-                "client_id": settings.twitch_client_id,
-                "client_secret": settings.twitch_client_secret,
-                "grant_type": "client_credentials",
-            },
-        )
-    resp.raise_for_status()
-    data = resp.json()
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://id.twitch.tv/oauth2/token",
+                params={
+                    "client_id": settings.twitch_client_id,
+                    "client_secret": settings.twitch_client_secret,
+                    "grant_type": "client_credentials",
+                },
+            )
+        resp.raise_for_status()
+        return resp.json()
+
+    data = await with_retry(call)
     _token_cache["access_token"] = data["access_token"]
     _token_cache["expires_at"] = now + data.get("expires_in", 3600)
     return _token_cache["access_token"]
@@ -45,10 +49,14 @@ async def search_games(query: str) -> list[dict]:
         "fields id, name, cover.image_id, first_release_date, genres.name, rating; "
         "limit 10;"
     )
-    async with httpx.AsyncClient() as client:
-        resp = await client.post("https://api.igdb.com/v4/games", headers=headers, content=body)
-    resp.raise_for_status()
-    return resp.json()
+
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.post("https://api.igdb.com/v4/games", headers=headers, content=body)
+        resp.raise_for_status()
+        return resp.json()
+
+    return await with_retry(call)
 
 
 async def get_games(ids: list[int]) -> list[dict]:
@@ -62,10 +70,18 @@ async def get_games(ids: list[int]) -> list[dict]:
         "first_release_date, platforms.name, screenshots.image_id; "
         "limit 500;"
     )
-    async with httpx.AsyncClient() as client:
-        resp = await client.post("https://api.igdb.com/v4/games", headers=headers, content=body)
-    resp.raise_for_status()
-    return resp.json()
+
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.post("https://api.igdb.com/v4/games", headers=headers, content=body)
+        resp.raise_for_status()
+        return resp.json()
+
+    try:
+        return await with_retry(call)
+    except (httpx.HTTPStatusError, httpx.TransportError):
+        # Detail enrichment failing shouldn't break the whole list.
+        return []
 
 
 async def get_game(game_id: int) -> dict | None:

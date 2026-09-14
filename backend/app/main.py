@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.database import Base, engine
@@ -25,6 +27,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(httpx.HTTPStatusError)
+async def external_api_status_error(request: Request, exc: httpx.HTTPStatusError):
+    return JSONResponse(
+        status_code=502,
+        content={"detail": "Dış servise şu an ulaşılamıyor, lütfen birazdan tekrar dene."},
+    )
+
+
+@app.exception_handler(httpx.RequestError)
+async def external_api_request_error(request: Request, exc: httpx.RequestError):
+    return JSONResponse(
+        status_code=502,
+        content={"detail": "Dış servise bağlanılamadı, lütfen birazdan tekrar dene."},
+    )
+
 
 app.include_router(auth.router)
 app.include_router(account.router)

@@ -1,6 +1,7 @@
 import httpx
 
 from app.config import get_settings
+from app.external.retry import with_retry
 
 settings = get_settings()
 BASE_URL = "https://api.themoviedb.org/3"
@@ -21,49 +22,69 @@ def _headers() -> dict:
 
 
 async def search_movies(query: str) -> list[dict]:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{BASE_URL}/search/movie",
-            headers=_headers(),
-            params={"query": query, "language": "tr-TR"},
-        )
-    resp.raise_for_status()
-    return resp.json().get("results", [])[:10]
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{BASE_URL}/search/movie",
+                headers=_headers(),
+                params={"query": query, "language": "tr-TR"},
+            )
+        resp.raise_for_status()
+        return resp.json().get("results", [])[:10]
+
+    return await with_retry(call)
 
 
 async def search_tv(query: str) -> list[dict]:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{BASE_URL}/search/tv",
-            headers=_headers(),
-            params={"query": query, "language": "tr-TR"},
-        )
-    resp.raise_for_status()
-    return resp.json().get("results", [])[:10]
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{BASE_URL}/search/tv",
+                headers=_headers(),
+                params={"query": query, "language": "tr-TR"},
+            )
+        resp.raise_for_status()
+        return resp.json().get("results", [])[:10]
+
+    return await with_retry(call)
 
 
 async def get_movie(movie_id: int) -> dict | None:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{BASE_URL}/movie/{movie_id}",
-            headers=_headers(),
-            params={"language": "tr-TR", "append_to_response": "credits"},
-        )
-    if resp.status_code != 200:
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{BASE_URL}/movie/{movie_id}",
+                headers=_headers(),
+                params={"language": "tr-TR", "append_to_response": "credits"},
+            )
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+    try:
+        return await with_retry(call)
+    except (httpx.HTTPStatusError, httpx.TransportError):
         return None
-    return resp.json()
 
 
 async def get_tv(tv_id: int) -> dict | None:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{BASE_URL}/tv/{tv_id}",
-            headers=_headers(),
-            params={"language": "tr-TR"},
-        )
-    if resp.status_code != 200:
+    async def call():
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{BASE_URL}/tv/{tv_id}",
+                headers=_headers(),
+                params={"language": "tr-TR"},
+            )
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+    try:
+        return await with_retry(call)
+    except (httpx.HTTPStatusError, httpx.TransportError):
         return None
-    return resp.json()
 
 
 def movie_poster_url(poster_path: str | None) -> str | None:
