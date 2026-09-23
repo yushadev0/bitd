@@ -107,3 +107,13 @@ class DashboardResponse(BaseModel):
     filmler: DashboardStats
     diziler: DashboardStats
     kitaplar: DashboardStats
+
+
+class PushRegisterRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=255)
+    dil: str = Field(default="tr", max_length=5)
+    saat_dilimi: str = Field(default="Europe/Istanbul", max_length=64)
+
+
+class PushUnregisterRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=255)

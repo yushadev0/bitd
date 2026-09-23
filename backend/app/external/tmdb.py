@@ -5,6 +5,7 @@ import httpx
 from app.config import get_settings
 from app.external import dns_bypass
 from app.external.retry import with_retry
+from app.i18n import is_en, tmdb_language
 
 settings = get_settings()
 HOST = "api.themoviedb.org"
@@ -19,6 +20,20 @@ GENRE_NAMES: dict[int, str] = {
     10766: "Pembe Dizi", 10767: "Talk Show", 10768: "Savaş & Politik",
 }
 
+GENRE_NAMES_EN: dict[int, str] = {
+    28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
+    99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
+    27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+    878: "Science Fiction", 10770: "TV Movie", 53: "Thriller", 10752: "War",
+    37: "Western", 10759: "Action & Adventure", 10762: "Kids",
+    10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy",
+    10766: "Soap", 10767: "Talk", 10768: "War & Politics",
+}
+
+
+def genre_name(genre_id: int) -> str:
+    return (GENRE_NAMES_EN if is_en() else GENRE_NAMES).get(genre_id, "")
+
 
 def _headers() -> dict:
     return {"Authorization": f"Bearer {settings.tmdb_token}"}
@@ -32,7 +47,7 @@ async def search_movies(query: str) -> list[dict]:
                 HOST,
                 "/3/search/movie",
                 headers=_headers(),
-                params={"query": query, "language": "tr-TR"},
+                params={"query": query, "language": tmdb_language()},
             )
         resp.raise_for_status()
         return resp.json().get("results", [])[:10]
@@ -48,7 +63,7 @@ async def search_tv(query: str) -> list[dict]:
                 HOST,
                 "/3/search/tv",
                 headers=_headers(),
-                params={"query": query, "language": "tr-TR"},
+                params={"query": query, "language": tmdb_language()},
             )
         resp.raise_for_status()
         return resp.json().get("results", [])[:10]
@@ -64,7 +79,7 @@ async def get_movie(movie_id: int) -> dict | None:
                 HOST,
                 f"/3/movie/{movie_id}",
                 headers=_headers(),
-                params={"language": "tr-TR", "append_to_response": "credits"},
+                params={"language": tmdb_language(), "append_to_response": "credits"},
             )
         if resp.status_code == 404:
             return None
@@ -85,7 +100,7 @@ async def get_tv(tv_id: int) -> dict | None:
                 HOST,
                 f"/3/tv/{tv_id}",
                 headers=_headers(),
-                params={"language": "tr-TR"},
+                params={"language": tmdb_language()},
             )
         if resp.status_code == 404:
             return None

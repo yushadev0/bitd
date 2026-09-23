@@ -8,19 +8,20 @@ from app import models, schemas
 from app.database import get_db, random_order
 from app.deps import get_current_user
 from app.external import tmdb
+from app.i18n import t
 from app.placeholder import placeholder_poster
 
 router = APIRouter(prefix="/api/movies", tags=["movies"])
 
 
 def _search_result(item: dict) -> dict:
-    genre_names = [tmdb.GENRE_NAMES.get(gid, "") for gid in item.get("genre_ids", [])]
+    genre_names = [tmdb.genre_name(gid) for gid in item.get("genre_ids", [])]
     genre_names = [g for g in genre_names if g]
-    title = item.get("title", "Bilinmeyen Film")
+    title = item.get("title", t("Bilinmeyen Film", "Unknown Movie"))
     return {
         "api_id": str(item["id"]),
         "title": title,
-        "poster": tmdb.movie_poster_url(item.get("poster_path")) or placeholder_poster(title, "FİLM", "ff2a6d"),
+        "poster": tmdb.movie_poster_url(item.get("poster_path")) or placeholder_poster(title, t("FİLM", "MOVIE"), "ff2a6d"),
         "year": (item.get("release_date") or "")[:4] or "--",
         "score": round(item.get("vote_average", 0), 1) if item.get("vote_average") else None,
         "genres": genre_names or ["--"],
@@ -34,17 +35,17 @@ def _movie_detail(movie: dict) -> dict:
             director = crew["name"]
             break
 
-    title = movie.get("title", "Bilinmeyen Film")
+    title = movie.get("title", t("Bilinmeyen Film", "Unknown Movie"))
     return {
         "title": title,
-        "poster": tmdb.movie_poster_url(movie.get("poster_path")) or placeholder_poster(title, "FİLM", "ff2a6d"),
+        "poster": tmdb.movie_poster_url(movie.get("poster_path")) or placeholder_poster(title, t("FİLM", "MOVIE"), "ff2a6d"),
         "score": round(movie.get("vote_average", 0) * 10) if movie.get("vote_average") else None,
         "year": (movie.get("release_date") or "")[:4] or "--",
         "genres": [g["name"] for g in movie.get("genres", [])] or ["--"],
-        "summary": movie.get("overview") or "Bu film için bir açıklama bulunmuyor.",
+        "summary": movie.get("overview") or t("Bu film için bir açıklama bulunmuyor.", "No description available for this movie."),
         "runtime_minutes": movie.get("runtime") or None,
         "director": director,
-        "trailer_url": tmdb.trailer_search_url(title, "fragman"),
+        "trailer_url": tmdb.trailer_search_url(title, t("fragman", "trailer")),
     }
 
 

@@ -9,6 +9,7 @@ from app import models, schemas
 from app.database import get_db, random_order
 from app.deps import get_current_user
 from app.external import google_books
+from app.i18n import t
 from app.placeholder import placeholder_poster
 
 router = APIRouter(prefix="/api/books", tags=["books"])
@@ -22,12 +23,12 @@ def _strip_html(text: str) -> str:
 
 def _search_result(item: dict) -> dict:
     info = item.get("volumeInfo", {})
-    title = info.get("title", "Bilinmeyen Kitap")
+    title = info.get("title", t("Bilinmeyen Kitap", "Unknown Book"))
     categories = info.get("categories") or ["--"]
     return {
         "api_id": item["id"],
         "title": title,
-        "poster": google_books.thumbnail_url(item) or placeholder_poster(title, "KİTAP", "ff2a6d"),
+        "poster": google_books.thumbnail_url(item) or placeholder_poster(title, t("KİTAP", "BOOK"), "ff2a6d"),
         "year": (info.get("publishedDate") or "")[:4] or "--",
         "score": None,
         "genres": categories,
@@ -36,15 +37,15 @@ def _search_result(item: dict) -> dict:
 
 def _book_detail(volume: dict) -> dict:
     info = volume.get("volumeInfo", {})
-    title = info.get("title", "Bilinmeyen Kitap")
+    title = info.get("title", t("Bilinmeyen Kitap", "Unknown Book"))
     authors = info.get("authors") or ["--"]
     return {
         "title": title,
-        "poster": google_books.thumbnail_url(volume) or placeholder_poster(title, "KİTAP", "ff2a6d"),
+        "poster": google_books.thumbnail_url(volume) or placeholder_poster(title, t("KİTAP", "BOOK"), "ff2a6d"),
         "score": None,
         "year": (info.get("publishedDate") or "")[:4] or "--",
         "genres": info.get("categories") or ["--"],
-        "summary": _strip_html(info.get("description") or "Bu kitap için bir açıklama bulunmuyor."),
+        "summary": _strip_html(info.get("description") or t("Bu kitap için bir açıklama bulunmuyor.", "No description available for this book.")),
         "authors": authors,
         "page_count": info.get("pageCount"),
         "preview_link": info.get("previewLink"),

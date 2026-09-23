@@ -6,6 +6,7 @@ from app import models, schemas
 from app.database import get_db
 from app.deps import get_current_user
 from app.external import google_books, igdb, tmdb
+from app.i18n import t
 from app.placeholder import placeholder_poster
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -54,7 +55,7 @@ async def recent_games(
         result.append({
             "api_id": str(row.api_oyun_id),
             "title": title,
-            "poster": igdb.cover_url(cover) or placeholder_poster(title, "OYUN", "38bdf8"),
+            "poster": igdb.cover_url(cover) or placeholder_poster(title, t("OYUN", "GAME"), "38bdf8"),
         })
     return result
 
@@ -78,7 +79,7 @@ async def recent_movies(
         result.append({
             "api_id": str(row.api_film_id),
             "title": title,
-            "poster": poster or placeholder_poster(title, "FİLM", "ff2a6d"),
+            "poster": poster or placeholder_poster(title, t("FİLM", "MOVIE"), "ff2a6d"),
         })
     return result
 
@@ -102,7 +103,7 @@ async def recent_tv(
         result.append({
             "api_id": str(row.api_dizi_id),
             "title": title,
-            "poster": poster or placeholder_poster(title, "DİZİ", "38bdf8"),
+            "poster": poster or placeholder_poster(title, t("DİZİ", "TV"), "38bdf8"),
         })
     return result
 
@@ -126,6 +127,6 @@ async def recent_books(
         result.append({
             "api_id": row.api_kitap_id,
             "title": title,
-            "poster": poster or placeholder_poster(title, "KİTAP", "ff2a6d"),
+            "poster": poster or placeholder_poster(title, t("KİTAP", "BOOK"), "ff2a6d"),
         })
     return result

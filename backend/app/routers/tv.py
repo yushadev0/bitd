@@ -8,19 +8,20 @@ from app import models, schemas
 from app.database import get_db, random_order
 from app.deps import get_current_user
 from app.external import tmdb
+from app.i18n import t
 from app.placeholder import placeholder_poster
 
 router = APIRouter(prefix="/api/tv", tags=["tv"])
 
 
 def _search_result(item: dict) -> dict:
-    genre_names = [tmdb.GENRE_NAMES.get(gid, "") for gid in item.get("genre_ids", [])]
+    genre_names = [tmdb.genre_name(gid) for gid in item.get("genre_ids", [])]
     genre_names = [g for g in genre_names if g]
-    title = item.get("name", "Bilinmeyen Dizi")
+    title = item.get("name", t("Bilinmeyen Dizi", "Unknown Show"))
     return {
         "api_id": str(item["id"]),
         "title": title,
-        "poster": tmdb.movie_poster_url(item.get("poster_path")) or placeholder_poster(title, "DİZİ", "38bdf8"),
+        "poster": tmdb.movie_poster_url(item.get("poster_path")) or placeholder_poster(title, t("DİZİ", "TV"), "38bdf8"),
         "year": (item.get("first_air_date") or "")[:4] or "--",
         "score": round(item.get("vote_average", 0), 1) if item.get("vote_average") else None,
         "genres": genre_names or ["--"],
@@ -29,17 +30,17 @@ def _search_result(item: dict) -> dict:
 
 def _tv_detail(show: dict) -> dict:
     networks = show.get("networks") or []
-    title = show.get("name", "Bilinmeyen Dizi")
+    title = show.get("name", t("Bilinmeyen Dizi", "Unknown Show"))
     return {
         "title": title,
-        "poster": tmdb.movie_poster_url(show.get("poster_path")) or placeholder_poster(title, "DİZİ", "38bdf8"),
+        "poster": tmdb.movie_poster_url(show.get("poster_path")) or placeholder_poster(title, t("DİZİ", "TV"), "38bdf8"),
         "score": round(show.get("vote_average", 0) * 10) if show.get("vote_average") else None,
         "year": (show.get("first_air_date") or "")[:4] or "--",
         "genres": [g["name"] for g in show.get("genres", [])] or ["--"],
-        "summary": show.get("overview") or "Bu dizi için bir açıklama bulunmuyor.",
+        "summary": show.get("overview") or t("Bu dizi için bir açıklama bulunmuyor.", "No description available for this show."),
         "seasons": show.get("number_of_seasons"),
         "network": networks[0]["name"] if networks else "--",
-        "trailer_url": tmdb.trailer_search_url(title, "dizi fragman"),
+        "trailer_url": tmdb.trailer_search_url(title, t("dizi fragman", "tv series trailer")),
     }
 
 

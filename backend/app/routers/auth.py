@@ -1,6 +1,6 @@
 import datetime as dt
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,7 +8,7 @@ from app import models, schemas
 from app.config import get_settings
 from app.database import get_db
 from app.deps import get_current_user
-from app.email_utils import send_otp_email
+from app.email_utils import compose_account_deleted_email, send_email, send_otp_email
 from app.security import (
     create_access_token,
     create_refresh_token,
@@ -99,6 +99,25 @@ def logout(
 @router.get("/me", response_model=schemas.CurrentUser)
 def me(user: models.Kullanici = Depends(get_current_user)):
     return user
+
+
+@router.delete("/me", status_code=204)
+def delete_account(
+    response: Response,
+    background_tasks: BackgroundTasks,
+    user: models.Kullanici = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    goodbye = compose_account_deleted_email(user.email, user.kullanici_adi)
+
+    # The library rows and push tokens go with the user via the relationships' delete-orphan cascade.
+    db.delete(user)
+    db.commit()
+
+    # Sent after the response so a slow or failing SMTP server never blocks the deletion.
+    background_tasks.add_task(send_email, goodbye)
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("remember_token", path="/")
 
 
 @router.post("/remember-login", response_model=schemas.CurrentUser)

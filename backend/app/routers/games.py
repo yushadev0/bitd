@@ -8,6 +8,7 @@ from app import models, schemas
 from app.database import get_db, random_order
 from app.deps import get_current_user
 from app.external import igdb
+from app.i18n import t
 from app.placeholder import placeholder_poster
 
 router = APIRouter(prefix="/api/games", tags=["games"])
@@ -20,13 +21,13 @@ def _year_from_unix(ts: int | None) -> str:
 
 
 def _search_result(item: dict) -> dict:
-    title = item.get("name", "Bilinmeyen Oyun")
+    title = item.get("name", t("Bilinmeyen Oyun", "Unknown Game"))
     cover = item.get("cover", {}).get("image_id")
     genres = [g["name"] for g in item.get("genres", [])] or ["--"]
     return {
         "api_id": str(item["id"]),
         "title": title,
-        "poster": igdb.cover_url(cover) or placeholder_poster(title, "OYUN", "38bdf8"),
+        "poster": igdb.cover_url(cover) or placeholder_poster(title, t("OYUN", "GAME"), "38bdf8"),
         "year": _year_from_unix(item.get("first_release_date")),
         "score": round(item["rating"]) if item.get("rating") else None,
         "genres": genres,
@@ -34,16 +35,16 @@ def _search_result(item: dict) -> dict:
 
 
 def _game_detail(game: dict) -> dict:
-    title = game.get("name", "Bilinmeyen Oyun")
+    title = game.get("name", t("Bilinmeyen Oyun", "Unknown Game"))
     cover = game.get("cover", {}).get("image_id")
     screenshots = [igdb.screenshot_url(s["image_id"]) for s in game.get("screenshots", [])[:5]]
     return {
         "title": title,
-        "poster": igdb.cover_url(cover) or placeholder_poster(title, "OYUN", "38bdf8"),
+        "poster": igdb.cover_url(cover) or placeholder_poster(title, t("OYUN", "GAME"), "38bdf8"),
         "score": round(game["rating"]) if game.get("rating") else None,
         "year": _year_from_unix(game.get("first_release_date")),
         "genres": [g["name"] for g in game.get("genres", [])] or ["--"],
-        "summary": game.get("summary") or "Bu oyun için bir açıklama bulunmuyor.",
+        "summary": game.get("summary") or t("Bu oyun için bir açıklama bulunmuyor.", "No description available for this game."),
         "platforms": [p["name"] for p in game.get("platforms", [])] or ["--"],
         "screenshots": screenshots,
     }

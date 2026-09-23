@@ -33,6 +33,9 @@ class Kullanici(Base):
     filmler: Mapped[list["KullaniciFilm"]] = relationship(back_populates="kullanici", cascade="all, delete-orphan")
     diziler: Mapped[list["KullaniciDizi"]] = relationship(back_populates="kullanici", cascade="all, delete-orphan")
     kitaplar: Mapped[list["KullaniciKitap"]] = relationship(back_populates="kullanici", cascade="all, delete-orphan")
+    bildirim_cihazlari: Mapped[list["BildirimCihazi"]] = relationship(
+        back_populates="kullanici", cascade="all, delete-orphan"
+    )
 
 
 class _KullaniciItemMixin:
@@ -82,3 +85,20 @@ class KullaniciKitap(_KullaniciItemMixin, Base):
     api_kitap_id: Mapped[str] = mapped_column(String(64), nullable=False)
 
     kullanici: Mapped["Kullanici"] = relationship(back_populates="kitaplar")
+
+
+class BildirimCihazi(Base):
+    """A device that receives the daily wishlist suggestion push (one row per Expo push token)."""
+
+    __tablename__ = "bildirim_cihazlari"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kullanici_id: Mapped[int] = mapped_column(ForeignKey("kullanicilar.id", ondelete="CASCADE"), nullable=False)
+    token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    dil: Mapped[str] = mapped_column(String(2), nullable=False, default="tr")
+    # IANA name (e.g. "Europe/Istanbul"): the push goes out in the evening of the device's own day.
+    saat_dilimi: Mapped[str] = mapped_column(String(64), nullable=False)
+    olusturma_tarihi: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    son_gonderim: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+
+    kullanici: Mapped["Kullanici"] = relationship(back_populates="bildirim_cihazlari")
