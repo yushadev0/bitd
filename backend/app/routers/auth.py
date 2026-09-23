@@ -1,14 +1,16 @@
 import datetime as dt
+import hmac
 
-from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import models, schemas
+from app import models, rate_limit, schemas
 from app.config import get_settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.email_utils import compose_account_deleted_email, send_email, send_otp_email
+from app.rate_limit import client_ip, enforce
 from app.security import (
     create_access_token,
     create_refresh_token,
@@ -25,6 +27,42 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 settings = get_settings()
 
 COOKIE_KWARGS = dict(httponly=True, samesite="lax", secure=settings.cookie_secure, path="/")
+
+
+def _authenticate(db: Session, request: Request, username: str, password: str) -> models.Kullanici:
+    """Checks credentials, throttling repeated failures per username and per IP."""
+    ip, name_key = client_ip(request), username.strip().lower()
+    enforce((rate_limit.login_failures_per_username, name_key), (rate_limit.login_failures_per_ip, ip))
+
+    user = db.scalar(select(models.Kullanici).where(models.Kullanici.kullanici_adi == username))
+    if not user or not verify_password(password, user.sifre):
+        rate_limit.login_failures_per_username.hit(name_key)
+        rate_limit.login_failures_per_ip.hit(ip)
+        raise HTTPException(401, "Kullanıcı adı veya şifre hatalı.")
+
+    rate_limit.login_failures_per_username.reset(name_key)
+    return user
+
+
+def _user_with_valid_code(db: Session, request: Request, email: str, code: str) -> models.Kullanici:
+    """Looks up a password reset code, capping wrong guesses so the 6 digits can't be brute-forced."""
+    ip, email_key = client_ip(request), email.strip().lower()
+    enforce((rate_limit.reset_code_failures_per_email, email_key), (rate_limit.reset_code_failures_per_ip, ip))
+
+    user = db.scalar(select(models.Kullanici).where(models.Kullanici.email == email))
+    if not user or not user.reset_kod or not hmac.compare_digest(user.reset_kod, code):
+        rate_limit.reset_code_failures_per_email.hit(email_key)
+        rate_limit.reset_code_failures_per_ip.hit(ip)
+        if user and user.reset_kod and rate_limit.reset_code_failures_per_email.blocked(email_key):
+            # Out of guesses: burn the code so the only way forward is a fresh email.
+            user.reset_kod = None
+            user.reset_kod_zaman = None
+            db.commit()
+        raise HTTPException(400, "Hatalı kod girdiniz.")
+
+    if not user.reset_kod_zaman or dt.datetime.utcnow() - user.reset_kod_zaman > dt.timedelta(minutes=15):
+        raise HTTPException(400, "Bu kodun süresi (15 dk) dolmuş.")
+    return user
 
 
 def _set_session_cookies(response: Response, user: models.Kullanici, remember: bool) -> None:
@@ -73,10 +111,8 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=schemas.CurrentUser)
-def login(payload: schemas.LoginRequest, response: Response, db: Session = Depends(get_db)):
-    user = db.scalar(select(models.Kullanici).where(models.Kullanici.kullanici_adi == payload.kullanici_adi))
-    if not user or not verify_password(payload.sifre, user.sifre):
-        raise HTTPException(401, "Kullanıcı adı veya şifre hatalı.")
+def login(payload: schemas.LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    user = _authenticate(db, request, payload.kullanici_adi, payload.sifre)
 
     _set_session_cookies(response, user, payload.beni_hatirla)
     db.commit()
@@ -161,11 +197,8 @@ def _token_response(user: models.Kullanici) -> schemas.TokenResponse:
 
 
 @router.post("/token", response_model=schemas.TokenResponse)
-def token_login(payload: schemas.TokenLoginRequest, db: Session = Depends(get_db)):
-    user = db.scalar(select(models.Kullanici).where(models.Kullanici.kullanici_adi == payload.kullanici_adi))
-    if not user or not verify_password(payload.sifre, user.sifre):
-        raise HTTPException(401, "Kullanıcı adı veya şifre hatalı.")
-    return _token_response(user)
+def token_login(payload: schemas.TokenLoginRequest, request: Request, db: Session = Depends(get_db)):
+    return _token_response(_authenticate(db, request, payload.kullanici_adi, payload.sifre))
 
 
 @router.post("/token/refresh", response_model=schemas.TokenResponse)
@@ -183,10 +216,18 @@ def token_refresh(payload: schemas.RefreshRequest, db: Session = Depends(get_db)
 
 
 @router.post("/forgot-password/send-code")
-def forgot_password_send_code(payload: schemas.ForgotPasswordSendRequest, db: Session = Depends(get_db)):
+def forgot_password_send_code(
+    payload: schemas.ForgotPasswordSendRequest, request: Request, db: Session = Depends(get_db)
+):
+    ip, email_key = client_ip(request), payload.email.strip().lower()
+    enforce((rate_limit.reset_send_per_email, email_key), (rate_limit.reset_send_per_ip, ip))
+    rate_limit.reset_send_per_email.hit(email_key)
+    rate_limit.reset_send_per_ip.hit(ip)
+
     user = db.scalar(select(models.Kullanici).where(models.Kullanici.email == payload.email))
     if not user:
-        raise HTTPException(404, "Sistemde böyle bir e-posta kayıtlı değil.")
+        # Same answer as for a real account, so this can't be used to find out who's registered.
+        return {"ok": True}
 
     code = generate_otp_code()
     user.reset_kod = code
@@ -200,34 +241,18 @@ def forgot_password_send_code(payload: schemas.ForgotPasswordSendRequest, db: Se
 
 
 @router.post("/forgot-password/verify")
-def forgot_password_verify(payload: schemas.ForgotPasswordVerifyRequest, db: Session = Depends(get_db)):
-    user = db.scalar(
-        select(models.Kullanici).where(
-            models.Kullanici.email == payload.email, models.Kullanici.reset_kod == payload.kod
-        )
-    )
-    if not user:
-        raise HTTPException(400, "Hatalı kod girdiniz.")
-
-    if not user.reset_kod_zaman or dt.datetime.utcnow() - user.reset_kod_zaman > dt.timedelta(minutes=15):
-        raise HTTPException(400, "Bu kodun süresi (15 dk) dolmuş.")
-
+def forgot_password_verify(
+    payload: schemas.ForgotPasswordVerifyRequest, request: Request, db: Session = Depends(get_db)
+):
+    _user_with_valid_code(db, request, payload.email, payload.kod)
     return {"ok": True}
 
 
 @router.post("/forgot-password/reset")
-def forgot_password_reset(payload: schemas.ForgotPasswordResetRequest, db: Session = Depends(get_db)):
-    user = db.scalar(
-        select(models.Kullanici).where(
-            models.Kullanici.email == payload.email, models.Kullanici.reset_kod == payload.kod
-        )
-    )
-    if not user:
-        raise HTTPException(400, "Hatalı kod girdiniz.")
-
-    if not user.reset_kod_zaman or dt.datetime.utcnow() - user.reset_kod_zaman > dt.timedelta(minutes=15):
-        raise HTTPException(400, "Bu kodun süresi (15 dk) dolmuş.")
-
+def forgot_password_reset(
+    payload: schemas.ForgotPasswordResetRequest, request: Request, db: Session = Depends(get_db)
+):
+    user = _user_with_valid_code(db, request, payload.email, payload.kod)
     user.sifre = hash_password(payload.yeni_sifre)
     user.reset_kod = None
     user.reset_kod_zaman = None

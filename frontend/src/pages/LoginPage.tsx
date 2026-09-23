@@ -10,7 +10,7 @@ type Step = "login" | "forgot-email" | "forgot-code" | "forgot-password";
 const STEP_COPY: Record<Step, { title: string; subtitle: string }> = {
   login: { title: "Giriş yap", subtitle: "Rafına geri dön." },
   "forgot-email": { title: "Şifreni sıfırla", subtitle: "E-postana bir kod gönderelim." },
-  "forgot-code": { title: "Kodu doğrula", subtitle: "E-postana gelen 6 haneli kodu gir." },
+  "forgot-code": { title: "Kodu doğrula", subtitle: "Hesabın varsa e-postana 6 haneli bir kod gönderdik." },
   "forgot-password": { title: "Yeni şifre", subtitle: "Son adım — yeni şifreni belirle." },
 };
 

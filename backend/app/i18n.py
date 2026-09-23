@@ -52,6 +52,7 @@ _EN_ERRORS: dict[str, str] = {
     "Şifreler eşleşmiyor.": "Passwords don't match.",
     "Sistemde böyle bir e-posta kayıtlı değil.": "No account is registered with that email.",
     "Geçersiz bildirim anahtarı.": "Invalid notification token.",
+    "Çok fazla deneme yaptın. Lütfen biraz sonra tekrar dene.": "Too many attempts. Please try again in a little while.",
     "Dış servise şu an ulaşılamıyor, lütfen birazdan tekrar dene.": "The external service is unavailable right now, please try again shortly.",
     "Dış servise bağlanılamadı, lütfen birazdan tekrar dene.": "Couldn't reach the external service, please try again shortly.",
 }
