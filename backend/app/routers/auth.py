@@ -11,10 +11,13 @@ from app.deps import get_current_user
 from app.email_utils import send_otp_email
 from app.security import (
     create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
     generate_otp_code,
     generate_remember_token,
     hash_password,
     hash_remember_token,
+    password_fingerprint,
     verify_password,
 )
 
@@ -121,6 +124,43 @@ def remember_login(
     _set_session_cookies(response, user, remember=True)
     db.commit()
     return user
+
+
+# ---------- Token auth (native clients) ----------
+# Same credentials as /login, but tokens come back in the body instead of cookies.
+# There is no server-side logout: the client just discards its tokens, which keeps
+# the web session's remember_token untouched.
+
+
+def _token_response(user: models.Kullanici) -> schemas.TokenResponse:
+    return schemas.TokenResponse(
+        access_token=create_access_token(user.id, user.kullanici_adi),
+        refresh_token=create_refresh_token(user.id, user.sifre),
+        expires_in=settings.access_token_expire_minutes * 60,
+        user=schemas.CurrentUser.model_validate(user),
+    )
+
+
+@router.post("/token", response_model=schemas.TokenResponse)
+def token_login(payload: schemas.TokenLoginRequest, db: Session = Depends(get_db)):
+    user = db.scalar(select(models.Kullanici).where(models.Kullanici.kullanici_adi == payload.kullanici_adi))
+    if not user or not verify_password(payload.sifre, user.sifre):
+        raise HTTPException(401, "Kullanıcı adı veya şifre hatalı.")
+    return _token_response(user)
+
+
+@router.post("/token/refresh", response_model=schemas.TokenResponse)
+def token_refresh(payload: schemas.RefreshRequest, db: Session = Depends(get_db)):
+    try:
+        claims = decode_refresh_token(payload.refresh_token)
+        user_id = int(claims["sub"])
+    except Exception as exc:
+        raise HTTPException(401, "Oturum geçersiz.") from exc
+
+    user = db.get(models.Kullanici, user_id)
+    if not user or claims.get("pwd") != password_fingerprint(user.sifre):
+        raise HTTPException(401, "Oturum geçersiz.")
+    return _token_response(user)
 
 
 @router.post("/forgot-password/send-code")

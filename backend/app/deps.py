@@ -1,4 +1,4 @@
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import models
@@ -8,8 +8,12 @@ from app.security import decode_access_token
 
 def get_current_user(
     access_token: str | None = Cookie(default=None),
+    authorization: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> models.Kullanici:
+    # Native clients send `Authorization: Bearer <jwt>`; the web app relies on the cookie.
+    if authorization and authorization.lower().startswith("bearer "):
+        access_token = authorization[7:].strip()
     if not access_token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Oturum bulunamadı.")
     try:
