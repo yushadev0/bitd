@@ -91,7 +91,7 @@ async def random_movie(
 ):
     row = db.scalar(
         select(models.KullaniciFilm)
-        .where(models.KullaniciFilm.kullanici_id == user.id, models.KullaniciFilm.istek_mi.is_(True))
+        .where(models.KullaniciFilm.kullanici_id == user.id, models.KullaniciFilm.istek_mi == True)
         .order_by(random_order())
     )
     if not row:

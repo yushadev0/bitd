@@ -99,7 +99,7 @@ async def random_game(
 ):
     row = db.scalar(
         select(models.KullaniciOyun)
-        .where(models.KullaniciOyun.kullanici_id == user.id, models.KullaniciOyun.istek_mi.is_(True))
+        .where(models.KullaniciOyun.kullanici_id == user.id, models.KullaniciOyun.istek_mi == True)
         .order_by(random_order())
     )
     if not row:

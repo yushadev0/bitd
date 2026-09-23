@@ -94,7 +94,7 @@ async def random_book(
 ):
     row = db.scalar(
         select(models.KullaniciKitap)
-        .where(models.KullaniciKitap.kullanici_id == user.id, models.KullaniciKitap.istek_mi.is_(True))
+        .where(models.KullaniciKitap.kullanici_id == user.id, models.KullaniciKitap.istek_mi == True)
         .order_by(random_order())
     )
     if not row:

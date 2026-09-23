@@ -86,7 +86,7 @@ async def random_tv(
 ):
     row = db.scalar(
         select(models.KullaniciDizi)
-        .where(models.KullaniciDizi.kullanici_id == user.id, models.KullaniciDizi.istek_mi.is_(True))
+        .where(models.KullaniciDizi.kullanici_id == user.id, models.KullaniciDizi.istek_mi == True)
         .order_by(random_order())
     )
     if not row:
