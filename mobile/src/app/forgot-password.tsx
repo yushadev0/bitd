@@ -4,15 +4,16 @@ import { Alert, KeyboardAvoidingView, ScrollView, StyleSheet, Text } from 'react
 
 import { authApi } from '@/api/endpoints';
 import { ErrorText, Field, PrimaryButton } from '@/components/form';
-import { Spacing } from '@/constants/theme';
+import { MaxWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/lib/i18n';
 
 type Step = 'email' | 'code' | 'password';
 
 const COPY: Record<Step, string> = {
-  email: 'Hesabına kayıtlı e-posta adresini gir, sana 6 haneli bir kod gönderelim.',
-  code: 'E-postana gelen 6 haneli kodu gir. Kod 15 dakika geçerli.',
-  password: 'Yeni şifreni belirle.',
+  email: t.auth.forgotEmailCopy,
+  code: t.auth.forgotCodeCopy,
+  password: t.auth.forgotPasswordCopy,
 };
 
 export default function ForgotPasswordScreen() {
@@ -31,7 +32,7 @@ export default function ForgotPasswordScreen() {
     try {
       await action();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Bir şeyler ters gitti.');
+      setError(e instanceof Error ? e.message : t.common.somethingWrong);
     } finally {
       setBusy(false);
     }
@@ -51,13 +52,13 @@ export default function ForgotPasswordScreen() {
 
   const resetPassword = () => {
     if (password !== passwordAgain) {
-      setError('Şifreler eşleşmiyor.');
+      setError(t.common.passwordsMismatch);
       return;
     }
     run(async () => {
       await authApi.resetPassword(email.trim(), code.trim(), password);
-      Alert.alert('Şifren güncellendi', 'Yeni şifrenle giriş yapabilirsin.', [
-        { text: 'Tamam', onPress: () => router.back() },
+      Alert.alert(t.auth.passwordUpdated, t.auth.passwordUpdatedBody, [
+        { text: t.common.ok, onPress: () => router.back() },
       ]);
     });
   };
@@ -70,7 +71,7 @@ export default function ForgotPasswordScreen() {
         {step === 'email' ? (
           <>
             <Field
-              placeholder="E-posta"
+              placeholder={t.auth.email}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -80,7 +81,7 @@ export default function ForgotPasswordScreen() {
               onSubmitEditing={email ? sendCode : undefined}
             />
             <ErrorText>{error}</ErrorText>
-            <PrimaryButton title="Kod Gönder" onPress={sendCode} loading={busy} disabled={!email} />
+            <PrimaryButton title={t.auth.sendCode} onPress={sendCode} loading={busy} disabled={!email} />
           </>
         ) : null}
 
@@ -98,14 +99,14 @@ export default function ForgotPasswordScreen() {
               style={styles.code}
             />
             <ErrorText>{error}</ErrorText>
-            <PrimaryButton title="Doğrula" onPress={verifyCode} loading={busy} disabled={code.length !== 6} />
+            <PrimaryButton title={t.auth.verify} onPress={verifyCode} loading={busy} disabled={code.length !== 6} />
           </>
         ) : null}
 
         {step === 'password' ? (
           <>
             <Field
-              placeholder="Yeni şifre (en az 6 karakter)"
+              placeholder={t.auth.newPassword}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -113,7 +114,7 @@ export default function ForgotPasswordScreen() {
               autoFocus
             />
             <Field
-              placeholder="Yeni şifre tekrar"
+              placeholder={t.auth.newPasswordAgain}
               value={passwordAgain}
               onChangeText={setPasswordAgain}
               secureTextEntry
@@ -121,7 +122,7 @@ export default function ForgotPasswordScreen() {
             />
             <ErrorText>{error}</ErrorText>
             <PrimaryButton
-              title="Şifreyi Güncelle"
+              title={t.auth.updatePassword}
               onPress={resetPassword}
               loading={busy}
               disabled={password.length < 6 || !passwordAgain}
@@ -135,7 +136,7 @@ export default function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { padding: Spacing.four, gap: Spacing.three },
+  content: { padding: Spacing.four, gap: Spacing.three, width: '100%', maxWidth: MaxWidth.form, alignSelf: 'center' },
   copy: { fontSize: 15, lineHeight: 21 },
   code: { fontSize: 28, letterSpacing: 10, textAlign: 'center', fontVariant: ['tabular-nums'] },
 });

@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { clearSession, refreshSession, setSessionExpiredHandler, storeSession } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import type { CurrentUser } from '@/api/types';
+import { unregisterPush } from '@/lib/push';
 
 type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -22,6 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   const signOut = useCallback(async () => {
+    // Best effort: a failed unregister shouldn't keep anyone signed in.
+    await unregisterPush().catch(() => {});
     await clearSession();
     setUser(null);
     setStatus('signedOut');
@@ -40,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setSessionExpiredHandler(() => {
+      unregisterPush().catch(() => {});
       setUser(null);
       setStatus('signedOut');
     });

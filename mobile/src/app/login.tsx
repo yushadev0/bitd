@@ -3,9 +3,10 @@ import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ErrorText, Field, PrimaryButton } from '@/components/form';
-import { Fonts, Spacing } from '@/constants/theme';
+import { Fonts, MaxWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/lib/i18n';
 
 export default function LoginScreen() {
   const theme = useTheme();
@@ -24,7 +25,7 @@ export default function LoginScreen() {
     try {
       await signIn(username.trim(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Giriş yapılamadı.');
+      setError(e instanceof Error ? e.message : t.auth.signInFailed);
       setBusy(false);
     }
   };
@@ -42,7 +43,7 @@ export default function LoginScreen() {
 
         <View style={styles.form}>
           <Field
-            placeholder="Kullanıcı adı"
+            placeholder={t.auth.username}
             value={username}
             onChangeText={setUsername}
             textContentType="username"
@@ -52,7 +53,7 @@ export default function LoginScreen() {
           />
           <Field
             ref={passwordRef}
-            placeholder="Şifre"
+            placeholder={t.auth.password}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -62,14 +63,14 @@ export default function LoginScreen() {
             onSubmitEditing={submit}
           />
           <ErrorText>{error}</ErrorText>
-          <PrimaryButton title="Giriş Yap" onPress={submit} loading={busy} disabled={!username || !password} />
+          <PrimaryButton title={t.auth.signIn} onPress={submit} loading={busy} disabled={!username || !password} />
           <Link href="/forgot-password" style={[styles.forgot, { color: theme.accent }]}>
-            Şifremi unuttum
+            {t.auth.forgotPassword}
           </Link>
         </View>
 
         <Link href="/register" style={[styles.link, { color: theme.textSecondary }]}>
-          Hesabın yok mu? <Text style={{ color: theme.accent, fontWeight: '600' }}>Kayıt ol</Text>
+          {t.auth.noAccount} <Text style={{ color: theme.accent, fontWeight: '600' }}>{t.auth.registerLink}</Text>
         </Link>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -78,7 +79,15 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.five },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: Spacing.four,
+    gap: Spacing.five,
+    width: '100%',
+    maxWidth: MaxWidth.form,
+    alignSelf: 'center',
+  },
   brand: { alignItems: 'center', gap: Spacing.one },
   logo: { fontSize: 44, fontWeight: '800', letterSpacing: 2, fontFamily: Fonts.rounded },
   tagline: { fontSize: 15, letterSpacing: 1 },

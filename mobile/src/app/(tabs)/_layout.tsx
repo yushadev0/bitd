@@ -9,6 +9,7 @@ import type { Category } from '@/api/types';
 import { RandomAccessory } from '@/components/random-accessory';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES, CATEGORY_ORDER } from '@/lib/categories';
+import { t } from '@/lib/i18n';
 import { upsertItem } from '@/lib/library-store';
 
 function isCategory(value: string | undefined): value is Category {
@@ -35,7 +36,7 @@ export default function TabsLayout() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       router.push(`/${category}/${encodeURIComponent(item.api_id)}` as Href);
     } catch (e) {
-      Alert.alert('Seçilemedi', e instanceof Error ? e.message : undefined);
+      Alert.alert(t.random.failed, e instanceof Error ? e.message : undefined);
     } finally {
       setPicking(false);
     }
@@ -54,7 +55,7 @@ export default function TabsLayout() {
       ) : null}
 
       <NativeTabs.Trigger name="(home)">
-        <NativeTabs.Trigger.Label>Özet</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t.home.tab}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} />
       </NativeTabs.Trigger>
 

@@ -23,14 +23,17 @@ export function PrimaryButton({
   onPress,
   loading,
   disabled,
+  destructive,
 }: {
   title: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  destructive?: boolean;
 }) {
   const theme = useTheme();
   const inactive = disabled || loading;
+  const foreground = destructive ? '#FFFFFF' : '#1C1917';
   return (
     <Pressable
       onPress={onPress}
@@ -38,9 +41,13 @@ export function PrimaryButton({
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: theme.accent, opacity: inactive ? 0.5 : pressed ? 0.8 : 1 },
+        { backgroundColor: destructive ? theme.danger : theme.accent, opacity: inactive ? 0.5 : pressed ? 0.8 : 1 },
       ]}>
-      {loading ? <ActivityIndicator color="#1C1917" /> : <Text style={styles.buttonText}>{title}</Text>}
+      {loading ? (
+        <ActivityIndicator color={foreground} />
+      ) : (
+        <Text style={[styles.buttonText, { color: foreground }]}>{title}</Text>
+      )}
     </Pressable>
   );
 }
@@ -66,6 +73,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginTop: Spacing.two,
   },
-  buttonText: { fontSize: 17, fontWeight: '600', color: '#1C1917' },
+  buttonText: { fontSize: 17, fontWeight: '600' },
   error: { fontSize: 15, textAlign: 'center' },
 });

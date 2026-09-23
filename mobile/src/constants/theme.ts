@@ -43,6 +43,12 @@ export const Radius = {
   field: 12,
 } as const;
 
+// Caps for iPad / wide windows so text and forms don't stretch edge to edge.
+export const MaxWidth = {
+  readable: 720,
+  form: 440,
+} as const;
+
 export const Fonts = Platform.select({
   ios: { rounded: 'ui-rounded', sans: 'system-ui' },
   default: { rounded: 'normal', sans: 'normal' },

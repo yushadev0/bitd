@@ -1,12 +1,9 @@
 import type { SFSymbol } from 'sf-symbols-typescript';
 
 import type { Category, DashboardResponse } from '@/api/types';
+import { t, type CategoryStrings } from '@/lib/i18n';
 
-export interface CategoryMeta {
-  title: string; // tab label
-  screenTitle: string; // large navigation title
-  completedLabel: string;
-  wishlistLabel: string;
+export interface CategoryMeta extends CategoryStrings {
   icon: SFSymbol;
   iconSelected: SFSymbol;
   statsKey: keyof DashboardResponse;
@@ -14,37 +11,25 @@ export interface CategoryMeta {
 
 export const CATEGORIES: Record<Category, CategoryMeta> = {
   games: {
-    title: 'Oyunlar',
-    screenTitle: 'Oyunlarım',
-    completedLabel: 'Tamamlananlar',
-    wishlistLabel: 'İstek Listesi',
+    ...t.categories.games,
     icon: 'gamecontroller',
     iconSelected: 'gamecontroller.fill',
     statsKey: 'oyunlar',
   },
   movies: {
-    title: 'Filmler',
-    screenTitle: 'Filmlerim',
-    completedLabel: 'İzlenenler',
-    wishlistLabel: 'İzleme Listesi',
+    ...t.categories.movies,
     icon: 'film',
     iconSelected: 'film.fill',
     statsKey: 'filmler',
   },
   tv: {
-    title: 'Diziler',
-    screenTitle: 'Dizilerim',
-    completedLabel: 'İzlenenler',
-    wishlistLabel: 'İzleme Listesi',
+    ...t.categories.tv,
     icon: 'tv',
     iconSelected: 'tv.fill',
     statsKey: 'diziler',
   },
   books: {
-    title: 'Kitaplar',
-    screenTitle: 'Kitaplarım',
-    completedLabel: 'Okunanlar',
-    wishlistLabel: 'Okuma Listesi',
+    ...t.categories.books,
     icon: 'book.closed',
     iconSelected: 'book.closed.fill',
     statsKey: 'kitaplar',

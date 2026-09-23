@@ -1,7 +1,16 @@
 import { Stack, router, useFocusEffect, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import { dashboardApi } from '@/api/endpoints';
 import type { Category, DashboardResponse, RecentItem } from '@/api/types';
@@ -10,11 +19,15 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES, CATEGORY_ORDER } from '@/lib/categories';
+import { t } from '@/lib/i18n';
 import { useLibraryVersion } from '@/lib/library-store';
 
 type Recent = Partial<Record<Category, RecentItem[]>>;
 
-function StatCard({ category, stats }: { category: Category; stats: DashboardResponse | null }) {
+// Past this width the four stat cards fit on one row.
+const WIDE_LAYOUT = 700;
+
+function StatCard({ category, stats, wide }: { category: Category; stats: DashboardResponse | null; wide: boolean }) {
   const theme = useTheme();
   const meta = CATEGORIES[category];
   const s = stats?.[meta.statsKey];
@@ -25,13 +38,14 @@ function StatCard({ category, stats }: { category: Category; stats: DashboardRes
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.statCard,
+        wide && styles.statCardWide,
         { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
       ]}>
       <SymbolView name={meta.iconSelected} tintColor={theme.accent} size={22} />
       <Text style={[styles.statNumber, { color: theme.text }]}>{s ? s.total - s.wishlist : '–'}</Text>
       <Text style={[styles.statLabel, { color: theme.text }]}>{meta.title}</Text>
       <Text style={[styles.statSub, { color: theme.textSecondary }]}>
-        {s ? `${s.wishlist} listede bekliyor` : ' '}
+        {s ? t.home.waiting(s.wishlist) : ' '}
       </Text>
     </Pressable>
   );
@@ -40,6 +54,7 @@ function StatCard({ category, stats }: { category: Category; stats: DashboardRes
 export default function HomeScreen() {
   const theme = useTheme();
   const { user } = useAuth();
+  const wide = useWindowDimensions().width >= WIDE_LAYOUT;
 
   const [stats, setStats] = useState<DashboardResponse | null>(null);
   const [recent, setRecent] = useState<Recent>({});
@@ -75,11 +90,11 @@ export default function HomeScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: user ? `Merhaba, ${user.kullanici_adi}` : 'Özet' }} />
+      <Stack.Screen options={{ title: user ? t.home.greeting(user.kullanici_adi) : t.home.tab }} />
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           icon="person.crop.circle"
-          accessibilityLabel="Hesap"
+          accessibilityLabel={t.account.title}
           onPress={() => router.push('/account')}
         />
       </Stack.Toolbar>
@@ -90,7 +105,7 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={styles.grid}>
           {CATEGORY_ORDER.map((c) => (
-            <StatCard key={c} category={c} stats={stats} />
+            <StatCard key={c} category={c} stats={stats} wide={wide} />
           ))}
         </View>
 
@@ -99,7 +114,7 @@ export default function HomeScreen() {
           if (items && items.length === 0) return null;
           return (
             <View key={c} style={styles.recentSection}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Son {CATEGORIES[c].title}</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.home.recent(CATEGORIES[c].title)}</Text>
               {items ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
                   {items.map((item) => (
@@ -141,6 +156,8 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     gap: Spacing.half,
   },
+  // four columns: (100% - three gaps) / 4
+  statCardWide: { flexBasis: '22%' },
   statNumber: { fontSize: 34, fontWeight: '700', fontVariant: ['tabular-nums'], marginTop: Spacing.two },
   statLabel: { fontSize: 15, fontWeight: '600' },
   statSub: { fontSize: 13 },

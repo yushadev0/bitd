@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/lib/i18n';
 
 interface Props {
   wishlistLabel: string;
@@ -22,7 +23,7 @@ export function RandomAccessory({ wishlistLabel, picking, onPick }: Props) {
       onPress={onPick}
       disabled={picking}
       accessibilityRole="button"
-      accessibilityLabel={`${wishlistLabel} içinden rastgele seç`}
+      accessibilityLabel={t.random.a11y(wishlistLabel)}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
       {picking ? (
         <ActivityIndicator />
@@ -31,11 +32,11 @@ export function RandomAccessory({ wishlistLabel, picking, onPick }: Props) {
       )}
       <View style={styles.text}>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
-          Rastgele seç
+          {t.random.pick}
         </Text>
         {!inline ? (
           <Text style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
-            {wishlistLabel} içinden
+            {t.random.from(wishlistLabel)}
           </Text>
         ) : null}
       </View>

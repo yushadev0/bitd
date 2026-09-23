@@ -1,5 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
+import { locale, t } from '@/lib/i18n';
+
 import type { TokenResponse } from './types';
 
 // Origin + path prefix of the deployed API, e.g. https://yusa.app/bitd
@@ -7,6 +9,9 @@ export const API_ORIGIN = 'https://yusa.app';
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? `${API_ORIGIN}/bitd`;
 
 const REFRESH_KEY = 'bitd.refresh_token';
+
+// Asks the API for English error messages and TMDB content; it defaults to Turkish.
+const LANG_HEADER = { 'X-App-Lang': locale };
 
 export class ApiError extends Error {
   status: number;
@@ -42,10 +47,12 @@ export async function hasStoredSession() {
 }
 
 async function parseError(response: Response): Promise<ApiError> {
-  let message = `İstek başarısız (${response.status}).`;
+  let message = t.common.requestFailed(response.status);
   try {
     const body = await response.json();
     if (typeof body.detail === 'string') message = body.detail;
+    // FastAPI's field validation errors come back as a list, not a sentence.
+    else if (response.status === 422) message = t.common.invalidInput;
   } catch {
     // ignore body parse failure
   }
@@ -59,7 +66,7 @@ export async function refreshSession(): Promise<TokenResponse | null> {
 
   const response = await fetch(`${API_BASE}/api/auth/token/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...LANG_HEADER },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
   if (response.status === 401) {
@@ -88,6 +95,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...LANG_HEADER,
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(init.headers ?? {}),
     },
@@ -108,6 +116,7 @@ const body = (value: unknown) => (value !== undefined ? JSON.stringify(value) : 
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, data?: unknown) => request<T>(path, { method: 'POST', body: body(data) }),
+  put: <T>(path: string, data?: unknown) => request<T>(path, { method: 'PUT', body: body(data) }),
   patch: <T>(path: string, data?: unknown) => request<T>(path, { method: 'PATCH', body: body(data) }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 };

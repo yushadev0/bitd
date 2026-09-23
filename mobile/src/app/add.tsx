@@ -11,12 +11,13 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES } from '@/lib/categories';
 import { posterUri } from '@/lib/image';
+import { t } from '@/lib/i18n';
 import { libraryActions, useLibrary } from '@/lib/library-store';
 
 const SEARCH_DELAY_MS = 400;
 
 function chooseList(title: string, completedLabel: string, wishlistLabel: string): Promise<boolean | null> {
-  const options = [`${completedLabel} bölümüne ekle`, `${wishlistLabel} bölümüne ekle`, 'Vazgeç'];
+  const options = [t.add.addTo(completedLabel), t.add.addTo(wishlistLabel), t.common.cancel];
   return new Promise((resolve) => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions({ title, options, cancelButtonIndex: 2 }, (i) =>
@@ -62,7 +63,7 @@ export default function AddScreen() {
           setResults(r);
           setError(null);
         })
-        .catch((e: unknown) => id === requestId.current && setError(e instanceof Error ? e.message : 'Arama başarısız.'))
+        .catch((e: unknown) => id === requestId.current && setError(e instanceof Error ? e.message : t.add.searchFailed))
         .finally(() => id === requestId.current && setSearching(false));
     }, SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
@@ -76,7 +77,7 @@ export default function AddScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setJustAdded((s) => new Set(s).add(result.api_id));
     } catch (e) {
-      Alert.alert('Eklenemedi', e instanceof Error ? e.message : undefined);
+      Alert.alert(t.add.failed, e instanceof Error ? e.message : undefined);
     }
   };
 
@@ -84,12 +85,12 @@ export default function AddScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: `${meta.title} Ekle` }} />
+      <Stack.Screen options={{ title: meta.addTitle }} />
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="checkmark" variant="done" accessibilityLabel="Bitti" onPress={() => router.back()} />
+        <Stack.Toolbar.Button icon="checkmark" variant="done" accessibilityLabel={t.common.done} onPress={() => router.back()} />
       </Stack.Toolbar>
       <Stack.SearchBar
-        placeholder={`${meta.title} ara`}
+        placeholder={meta.searchPlaceholder}
         autoFocus
         hideWhenScrolling={false}
         onChangeText={(e) => setQuery(e.nativeEvent.text)}
@@ -110,7 +111,7 @@ export default function AddScreen() {
             <View style={styles.empty}>
               <SymbolView name="magnifyingglass" size={40} tintColor={theme.textSecondary} />
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {error ?? (showResults ? 'Sonuç bulunamadı.' : `Eklemek istediğin ${meta.title.toLocaleLowerCase('tr')} için ara.`)}
+                {error ?? (showResults ? t.add.noResults : meta.searchHint)}
               </Text>
             </View>
           )

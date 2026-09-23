@@ -1,29 +1,27 @@
 import { Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
 import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
+import * as Application from 'expo-application';
 import { Stack, router } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
+import { API_ORIGIN } from '@/api/client';
+import { SettingsGroup, SettingsRow, SettingsSection } from '@/components/settings-list';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useTheme } from '@/hooks/use-theme';
+import { locale, t } from '@/lib/i18n';
+import { setPushEnabled, usePushEnabled } from '@/lib/push';
 import { setThemePreference, useThemePreference, type ThemePreference } from '@/lib/theme-preference';
 
-function Row({ label, value }: { label: string; value: string }) {
-  const theme = useTheme();
-  return (
-    <View style={styles.row}>
-      <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
-      <Text style={[styles.value, { color: theme.textSecondary }]} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
+const PRIVACY_URL = `${API_ORIGIN}/bitd/privacy/?lang=${locale}`;
+const VERSION = `${Application.nativeApplicationVersion ?? '?'} (${Application.nativeBuildVersion ?? '?'})`;
 
 export default function AccountScreen() {
   const theme = useTheme();
   const { user, signOut, setUser } = useAuth();
   const themePreference = useThemePreference();
+  const pushEnabled = usePushEnabled();
 
   const changeTheme = (pref: ThemePreference) =>
     setThemePreference(pref)
@@ -31,57 +29,84 @@ export default function AccountScreen() {
       // The local switch already happened; only the web sync failed, which isn't worth an alert.
       .catch(() => {});
 
+  const togglePush = async (on: boolean) => {
+    const ok = await setPushEnabled(on).catch(() => false);
+    if (on && !ok) {
+      Alert.alert(t.account.notificationsDenied, t.account.notificationsDeniedBody, [
+        { text: t.common.cancel, style: 'cancel' },
+        { text: t.account.openSettings, onPress: () => Linking.openSettings() },
+      ]);
+    }
+  };
+
   const confirmSignOut = () =>
-    Alert.alert('Çıkış yapılsın mı?', undefined, [
-      { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Çıkış Yap', style: 'destructive', onPress: signOut },
+    Alert.alert(t.account.signOutConfirm, undefined, [
+      { text: t.common.cancel, style: 'cancel' },
+      { text: t.account.signOut, style: 'destructive', onPress: signOut },
     ]);
 
   return (
     <>
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Kapat" onPress={() => router.back()} />
+        <Stack.Toolbar.Button icon="xmark" accessibilityLabel={t.common.close} onPress={() => router.back()} />
       </Stack.Toolbar>
 
       <ScrollView
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">
-        <View style={[styles.group, { backgroundColor: theme.backgroundElement }]}>
-          <Row label="Kullanıcı adı" value={user?.kullanici_adi ?? ''} />
-          <View style={[styles.separator, { backgroundColor: theme.separator }]} />
-          <Row label="E-posta" value={user?.email ?? ''} />
-        </View>
+        <SettingsGroup>
+          <SettingsRow label={t.account.username} value={user?.kullanici_adi ?? ''} />
+          <SettingsRow label={t.account.email} value={user?.email ?? ''} />
+        </SettingsGroup>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>GÖRÜNÜM</Text>
-          <View style={[styles.group, styles.pickerGroup, { backgroundColor: theme.backgroundElement }]}>
+        <SettingsSection title={t.account.appearance} footer={t.account.themeFootnote}>
+          <View style={[styles.pickerGroup, { backgroundColor: theme.backgroundElement }]}>
             <Host matchContents={{ vertical: true }} style={styles.stretch}>
               <Picker
                 selection={themePreference}
                 onSelectionChange={(value) => changeTheme(value as ThemePreference)}
                 modifiers={[pickerStyle('segmented')]}>
-                <SwiftText modifiers={[tag('system')]}>Sistem</SwiftText>
-                <SwiftText modifiers={[tag('light')]}>Açık</SwiftText>
-                <SwiftText modifiers={[tag('dark')]}>Koyu</SwiftText>
+                <SwiftText modifiers={[tag('system')]}>{t.account.themeSystem}</SwiftText>
+                <SwiftText modifiers={[tag('light')]}>{t.account.themeLight}</SwiftText>
+                <SwiftText modifiers={[tag('dark')]}>{t.account.themeDark}</SwiftText>
               </Picker>
             </Host>
           </View>
-          <Text style={[styles.footnote, { color: theme.textSecondary }]}>
-            Açık veya Koyu seçimi web uygulamasına da uygulanır.
-          </Text>
-        </View>
+        </SettingsSection>
 
-        <Pressable
-          onPress={confirmSignOut}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.group,
-            styles.signOut,
-            { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
-          ]}>
-          <Text style={[styles.signOutText, { color: theme.danger }]}>Çıkış Yap</Text>
-        </Pressable>
+        <SettingsSection title={t.account.notifications} footer={t.account.dailySuggestionFootnote}>
+          <SettingsGroup>
+            <SettingsRow
+              label={t.account.dailySuggestion}
+              control={
+                <Switch value={pushEnabled} onValueChange={togglePush} trackColor={{ true: theme.accent }} />
+              }
+            />
+          </SettingsGroup>
+        </SettingsSection>
+
+        <SettingsGroup>
+          <SettingsRow label={t.account.signOut} onPress={confirmSignOut} destructive />
+        </SettingsGroup>
+
+        <SettingsSection title={t.account.about}>
+          <SettingsGroup>
+            <SettingsRow
+              label={t.account.privacy}
+              accessory="external"
+              onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
+            />
+            <SettingsRow label={t.account.dataSources} accessory="chevron" onPress={() => router.push('/account/credits')} />
+            <SettingsRow label={t.account.version} value={VERSION} />
+            <SettingsRow
+              label={t.account.deleteAccount}
+              accessory="chevron"
+              destructive
+              onPress={() => router.push('/account/delete')}
+            />
+          </SettingsGroup>
+        </SettingsSection>
       </ScrollView>
     </>
   );
@@ -89,23 +114,6 @@ export default function AccountScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: Spacing.three, gap: Spacing.four },
-  group: { borderRadius: Radius.card, borderCurve: 'continuous', overflow: 'hidden' },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 14,
-  },
-  label: { fontSize: 17 },
-  value: { fontSize: 17, flexShrink: 1 },
-  separator: { height: StyleSheet.hairlineWidth, marginLeft: Spacing.three },
-  signOut: { alignItems: 'center', paddingVertical: 14 },
-  section: { gap: Spacing.two },
-  sectionTitle: { fontSize: 13, marginLeft: Spacing.three },
-  pickerGroup: { padding: Spacing.three },
+  pickerGroup: { borderRadius: Radius.card, borderCurve: 'continuous', padding: Spacing.three },
   stretch: { alignSelf: 'stretch' },
-  footnote: { fontSize: 13, marginHorizontal: Spacing.three },
-  signOutText: { fontSize: 17, fontWeight: '600' },
 });

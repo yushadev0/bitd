@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import { libraryApi } from '@/api/endpoints';
 import type { Category, LibraryItem } from '@/api/types';
+import { t } from '@/lib/i18n';
 
 // One shared cache per category, so the grid, the detail screen, the add sheet and
 // the random picker all read and update the same items without refetching.
@@ -60,7 +61,7 @@ export function loadLibrary(category: Category): Promise<void> {
   inFlight[category] ??= libraryApi(category)
     .list()
     .then((items) => setState(category, { items, error: null }))
-    .catch((e: unknown) => setState(category, { error: e instanceof Error ? e.message : 'Liste yüklenemedi.' }))
+    .catch((e: unknown) => setState(category, { error: e instanceof Error ? e.message : t.library.loadFailed }))
     .finally(() => {
       delete inFlight[category];
     });

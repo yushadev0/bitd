@@ -42,11 +42,29 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": [
+              "tr",
+              "en"
+            ]
+          }
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bd121216-6fc9-4dcc-a27a-8a3f7a0b8312"
+      }
     }
   }
 }

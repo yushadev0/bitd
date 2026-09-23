@@ -8,9 +8,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { Category, ItemDetail, LibraryItem } from '@/api/types';
-import { Radius, Spacing } from '@/constants/theme';
+import { MaxWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES } from '@/lib/categories';
+import { localeTag, t } from '@/lib/i18n';
 import { posterUri } from '@/lib/image';
 import { libraryActions, loadLibrary, useLibrary, useLibraryItem } from '@/lib/library-store';
 
@@ -20,25 +21,25 @@ function parseISODate(value: string | null) {
   return new Date(y, m - 1, d);
 }
 
-const dateFormat = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+const dateFormat = new Intl.DateTimeFormat(localeTag, { day: 'numeric', month: 'long', year: 'numeric' });
 
 function facts(detail: ItemDetail | null, item: LibraryItem): [string, string][] {
   const rows: [string, string | number | null | undefined][] = [
-    ['Puan', detail?.score],
-    ['Süre', detail?.runtime_minutes ? `${detail.runtime_minutes} dk` : undefined],
-    ['Yönetmen', detail?.director],
-    ['Sezon', detail?.seasons],
-    ['Kanal', detail?.network],
-    ['Platform', detail?.platforms?.join(', ')],
-    ['Yazar', detail?.authors?.join(', ')],
-    ['Sayfa', detail?.page_count],
-    ['Eklenme', dateFormat.format(new Date(item.eklenme_tarihi))],
+    [t.detail.score, detail?.score],
+    [t.detail.runtime, detail?.runtime_minutes ? t.detail.minutes(detail.runtime_minutes) : undefined],
+    [t.detail.director, detail?.director],
+    [t.detail.seasons, detail?.seasons],
+    [t.detail.network, detail?.network],
+    [t.detail.platform, detail?.platforms?.join(', ')],
+    [t.detail.author, detail?.authors?.join(', ')],
+    [t.detail.pages, detail?.page_count],
+    [t.detail.added, dateFormat.format(new Date(item.eklenme_tarihi))],
   ];
   return rows.filter((r): r is [string, string | number] => r[1] != null && r[1] !== '').map(([k, v]) => [k, String(v)]);
 }
 
 function showError(e: unknown) {
-  Alert.alert('İşlem başarısız', e instanceof Error ? e.message : undefined);
+  Alert.alert(t.common.actionFailed, e instanceof Error ? e.message : undefined);
 }
 
 export function ItemDetailScreen({ category }: { category: Category }) {
@@ -58,7 +59,7 @@ export function ItemDetailScreen({ category }: { category: Category }) {
       <View style={styles.center}>
         <Stack.Screen options={{ title: '' }} />
         {library.items ? (
-          <Text style={{ color: theme.textSecondary }}>Kayıt bulunamadı.</Text>
+          <Text style={{ color: theme.textSecondary }}>{t.detail.notFound}</Text>
         ) : (
           <ActivityIndicator />
         )}
@@ -105,10 +106,10 @@ function DetailBody({
   };
 
   const confirmDelete = () =>
-    Alert.alert(`“${detail?.title ?? 'Bu kayıt'}” silinsin mi?`, 'Bu işlem geri alınamaz.', [
-      { text: 'Vazgeç', style: 'cancel' },
+    Alert.alert(t.detail.deleteConfirm(detail?.title ?? t.detail.thisItem), t.detail.irreversible, [
+      { text: t.common.cancel, style: 'cancel' },
       {
-        text: 'Sil',
+        text: t.common.delete,
         style: 'destructive',
         onPress: () =>
           libraryActions
@@ -125,28 +126,28 @@ function DetailBody({
     <>
       <Stack.Screen options={{ title: '', headerLargeTitleEnabled: false }} />
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel="Diğer işlemler">
+        <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel={t.detail.moreActions}>
           <Stack.Toolbar.MenuAction
             icon={item.istek_mi ? 'checkmark.circle' : 'bookmark'}
             onPress={() => setStatus(!item.istek_mi)}>
-            {item.istek_mi ? `${completedLabel} bölümüne taşı` : `${wishlistLabel} bölümüne taşı`}
+            {t.detail.moveTo(item.istek_mi ? completedLabel : wishlistLabel)}
           </Stack.Toolbar.MenuAction>
           {detail?.trailer_url ? (
             <Stack.Toolbar.MenuAction
               icon="play.rectangle"
               onPress={() => WebBrowser.openBrowserAsync(detail.trailer_url!)}>
-              Fragmanı izle
+              {t.detail.watchTrailer}
             </Stack.Toolbar.MenuAction>
           ) : null}
           {detail?.preview_link ? (
             <Stack.Toolbar.MenuAction
               icon="book"
               onPress={() => WebBrowser.openBrowserAsync(detail.preview_link!)}>
-              Önizlemeyi aç
+              {t.detail.openPreview}
             </Stack.Toolbar.MenuAction>
           ) : null}
           <Stack.Toolbar.MenuAction icon="trash" destructive onPress={confirmDelete}>
-            Sil
+            {t.common.delete}
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
@@ -185,7 +186,7 @@ function DetailBody({
 
           {!item.istek_mi ? (
             <View style={styles.dateRow}>
-              <Text style={[styles.rowLabel, { color: theme.text }]}>Bitirme tarihi</Text>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>{t.detail.finishDate}</Text>
               <Host matchContents>
                 <DatePicker
                   selection={parseISODate(item.bitirme_tarihi)}
@@ -202,15 +203,15 @@ function DetailBody({
         {/* Personal note */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notum</Text>
-            {noteSaved ? <Text style={[styles.saved, { color: theme.textSecondary }]}>Kaydedildi</Text> : null}
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.detail.myNote}</Text>
+            {noteSaved ? <Text style={[styles.saved, { color: theme.textSecondary }]}>{t.detail.saved}</Text> : null}
           </View>
           <TextInput
             value={note}
             onChangeText={setNote}
             onBlur={saveNote}
             multiline
-            placeholder="Bu kayıtla ilgili düşüncelerin…"
+            placeholder={t.detail.notePlaceholder}
             placeholderTextColor={theme.textSecondary}
             style={[styles.note, { backgroundColor: theme.backgroundElement, color: theme.text }]}
           />
@@ -219,7 +220,7 @@ function DetailBody({
         {/* Summary */}
         {detail?.summary ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Özet</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.detail.summary}</Text>
             <Pressable onPress={() => setSummaryOpen((o) => !o)}>
               <Text
                 style={[styles.body, { color: theme.text }]}
@@ -227,7 +228,7 @@ function DetailBody({
                 {detail.summary}
               </Text>
               {longSummary && !summaryOpen ? (
-                <Text style={[styles.more, { color: theme.accent }]}>Devamını oku</Text>
+                <Text style={[styles.more, { color: theme.accent }]}>{t.detail.readMore}</Text>
               ) : null}
             </Pressable>
           </View>
@@ -251,7 +252,7 @@ function DetailBody({
         {/* Screenshots (games) */}
         {detail?.screenshots?.length ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Ekran Görüntüleri</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.detail.screenshots}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shots}>
               {detail.screenshots.map((src) => (
                 <Image
@@ -271,7 +272,14 @@ function DetailBody({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: Spacing.three, gap: Spacing.four, paddingBottom: Spacing.six },
+  content: {
+    padding: Spacing.three,
+    gap: Spacing.four,
+    paddingBottom: Spacing.six,
+    width: '100%',
+    maxWidth: MaxWidth.readable,
+    alignSelf: 'center',
+  },
   stretch: { alignSelf: 'stretch' },
   hero: { alignItems: 'center', gap: Spacing.two },
   poster: {

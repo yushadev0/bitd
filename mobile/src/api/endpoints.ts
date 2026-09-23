@@ -23,6 +23,8 @@ export const authApi = {
 
   resetPassword: (email: string, kod: string, yeni_sifre: string) =>
     api.post<{ ok: boolean }>('/api/auth/forgot-password/reset', { email, kod, yeni_sifre }),
+
+  deleteAccount: () => api.delete<void>('/api/auth/me'),
 };
 
 export function libraryApi(category: Category) {
