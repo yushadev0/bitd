@@ -26,12 +26,6 @@ export function completeOnboarding() {
   setMeta(KEY, '1').catch(() => {});
 }
 
-/** Settings → Show Introduction. */
-export function showOnboardingAgain() {
-  set(false);
-  setMeta(KEY, null).catch(() => {});
-}
-
 export function useOnboarded() {
   return useSyncExternalStore(
     (l) => {

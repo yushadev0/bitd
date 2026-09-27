@@ -121,7 +121,7 @@ const tr = {
     title: 'Ayarlar',
     accountSection: 'HESAP',
     guestFootnote:
-      'BITD’yi kullanmak için hesap gerekmez; kütüphanen bu cihazda saklanır. Hesap açarsan kütüphanen yedeklenir ve web sürümüyle senkronize olur.',
+      'BITD’yi kullanmak için hesap gerekmez; kütüphanen bu cihazda saklanır. Hesap açarsan kütüphanen yedeklenir ve web sürümü ile diğer cihazlarınla senkronize kalır.',
     signIn: 'Giriş Yap',
     createAccount: 'Hesap Oluştur',
     sync: 'Senkronizasyon',
@@ -141,7 +141,6 @@ const tr = {
     about: 'HAKKINDA',
     privacy: 'Gizlilik Politikası',
     dataSources: 'Veri Kaynakları',
-    showIntro: 'Tanıtımı Göster',
     version: 'Sürüm',
     deleteAccount: 'Hesabı Sil',
     notifications: 'BİLDİRİMLER',
@@ -356,7 +355,7 @@ const en: Strings = {
     title: 'Settings',
     accountSection: 'ACCOUNT',
     guestFootnote:
-      'You don’t need an account to use BITD; your library is stored on this device. With an account, it’s backed up and kept in sync with the web app.',
+      'You don’t need an account to use BITD; your library is stored on this device. With an account, it’s backed up and stays in sync with the web app and your other devices.',
     signIn: 'Sign In',
     createAccount: 'Create Account',
     sync: 'Sync',
@@ -378,7 +377,6 @@ const en: Strings = {
     about: 'ABOUT',
     privacy: 'Privacy Policy',
     dataSources: 'Data Sources',
-    showIntro: 'Show Introduction',
     version: 'Version',
     deleteAccount: 'Delete Account',
     notifications: 'NOTIFICATIONS',
