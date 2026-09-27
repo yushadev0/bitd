@@ -12,6 +12,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useTheme } from '@/hooks/use-theme';
 import { locale, localeTag, t } from '@/lib/i18n';
+import { showOnboardingAgain } from '@/lib/onboarding';
 import { setPushEnabled, usePushEnabled } from '@/lib/push';
 import { requestSync, useSyncStatus } from '@/lib/sync';
 import { setThemePreference, useThemePreference, type ThemePreference } from '@/lib/theme-preference';
@@ -131,6 +132,7 @@ export default function AccountScreen() {
               onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
             />
             <SettingsRow label={t.account.dataSources} accessory="chevron" onPress={() => router.push('/account/credits')} />
+            <SettingsRow label={t.account.showIntro} onPress={showOnboardingAgain} />
             <SettingsRow label={t.account.version} value={VERSION} />
             {signedIn ? (
               <SettingsRow

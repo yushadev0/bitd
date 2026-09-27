@@ -1,9 +1,12 @@
-import * as SecureStore from 'expo-secure-store';
 import { useSyncExternalStore } from 'react';
 
-// Whether the first-launch introduction has been seen. Null until read at launch.
+import { getMeta, setMeta } from '@/lib/db';
 
-const KEY = 'bitd.onboarded';
+// Whether the first-launch introduction has been seen. Null until read at launch.
+// Kept in the app's own database rather than the Keychain, so deleting the app brings
+// the introduction back on reinstall.
+
+const KEY = 'onboarded';
 let done: boolean | null = null;
 const listeners = new Set<() => void>();
 
@@ -14,14 +17,19 @@ function set(value: boolean) {
 
 /** Call once at launch; the splash screen waits for it. */
 export async function restoreOnboarding() {
-  const saved = await SecureStore.getItemAsync(KEY).catch(() => null);
-  set(saved === '1');
+  set((await getMeta(KEY).catch(() => null)) === '1');
 }
 
 export function completeOnboarding() {
   if (done) return;
   set(true);
-  SecureStore.setItemAsync(KEY, '1').catch(() => {});
+  setMeta(KEY, '1').catch(() => {});
+}
+
+/** Settings → Show Introduction. */
+export function showOnboardingAgain() {
+  set(false);
+  setMeta(KEY, null).catch(() => {});
 }
 
 export function useOnboarded() {
