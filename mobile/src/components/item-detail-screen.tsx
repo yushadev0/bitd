@@ -49,10 +49,10 @@ export function ItemDetailScreen({ category }: { category: Category }) {
   const library = useLibrary(category);
   const item = useLibraryItem(category, id);
 
-  // Deep links or a cold random pick can land here before the tab ever loaded its list.
+  // A notification tap can land here before anything else loaded the library.
   useEffect(() => {
-    if (!library.items) loadLibrary(category);
-  }, [library.items, category]);
+    if (!library.items) loadLibrary();
+  }, [library.items]);
 
   if (!item) {
     return (

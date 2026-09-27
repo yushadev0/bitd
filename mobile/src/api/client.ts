@@ -25,7 +25,7 @@ export class ApiError extends Error {
 // The access token lives only in memory; the refresh token is the durable
 // credential and sits in the Keychain.
 let accessToken: string | null = null;
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshInFlight: Promise<TokenResponse | null> | null = null;
 let onSessionExpired: (() => void) | null = null;
 
 export function setSessionExpiredHandler(handler: (() => void) | null) {
@@ -59,12 +59,26 @@ async function parseError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, message);
 }
 
-/** Exchanges the stored refresh token for a new pair. Returns the fresh response, or null if the session is gone. */
-export async function refreshSession(): Promise<TokenResponse | null> {
+/** Thrown when the request never reached the server (offline, DNS, timeout). */
+export class NetworkError extends ApiError {
+  constructor() {
+    super(0, t.common.offline);
+  }
+}
+
+async function send(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new NetworkError();
+  }
+}
+
+async function exchangeRefreshToken(): Promise<TokenResponse | null> {
   const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
   if (!refreshToken) return null;
 
-  const response = await fetch(`${API_BASE}/api/auth/token/refresh`, {
+  const response = await send(`${API_BASE}/api/auth/token/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...LANG_HEADER },
     body: JSON.stringify({ refresh_token: refreshToken }),
@@ -80,18 +94,20 @@ export async function refreshSession(): Promise<TokenResponse | null> {
   return tokens;
 }
 
-// Concurrent 401s share one refresh round-trip instead of racing each other.
-function refreshOnce(): Promise<boolean> {
-  refreshInFlight ??= refreshSession()
-    .then((tokens) => tokens !== null)
-    .finally(() => {
-      refreshInFlight = null;
-    });
+/**
+ * Exchanges the stored refresh token for a new pair. Resolves to null if the session is
+ * gone for good; throws (NetworkError…) if the server just couldn't be reached.
+ * Concurrent callers share one round-trip instead of racing each other.
+ */
+export function refreshSession(): Promise<TokenResponse | null> {
+  refreshInFlight ??= exchangeRefreshToken().finally(() => {
+    refreshInFlight = null;
+  });
   return refreshInFlight;
 }
 
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await send(`${API_BASE}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -102,7 +118,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   });
 
   if (response.status === 401 && retry && (await hasStoredSession())) {
-    if (await refreshOnce()) return request<T>(path, init, false);
+    if (await refreshSession()) return request<T>(path, init, false);
     onSessionExpired?.();
   }
 

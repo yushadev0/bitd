@@ -1,20 +1,28 @@
-import Constants from 'expo-constants';
-import { getCalendars } from 'expo-localization';
 import * as Notifications from 'expo-notifications';
 import { router, type Href } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useSyncExternalStore } from 'react';
 
 import { api } from '@/api/client';
-import { locale } from '@/lib/i18n';
+import type { Category } from '@/api/types';
+import { CATEGORY_ORDER } from '@/lib/categories';
+import { t } from '@/lib/i18n';
+import { getLibraryItems, useLibraries, useLibraryVersion } from '@/lib/library-store';
 
-// The daily wishlist suggestion is sent by the server (see backend app/push.py); the app
-// only hands over its Expo push token, language and time zone, and opens the item on tap.
+// The daily wishlist suggestion is a local notification: the phone schedules the next
+// week's evenings itself, each with a random pick from its own library, so it works
+// without an account and without a connection. It's rescheduled whenever the library
+// changes and at every launch, so the picks stay current and never run out.
 
 const PREF_KEY = 'bitd.push'; // 'off' once the user switches the daily suggestion off
-const TOKEN_KEY = 'bitd.push_token'; // the token last registered, so sign-out can drop it
+// Builds up to 1.0 registered with the server instead (backend app/push.py); set when they did.
+const LEGACY_TOKEN_KEY = 'bitd.push_token';
 
-// Still show the banner when the push lands while the app is open.
+const SEND_HOUR = 19;
+const DAYS_AHEAD = 7;
+const ID_PREFIX = 'daily-suggestion-';
+
+// Still show the banner when it fires while the app is open.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
@@ -42,62 +50,112 @@ export function usePushEnabled() {
   );
 }
 
+/** Stops the server-sent pushes an earlier build signed this phone up for, so it doesn't get two a day. */
+async function dropLegacyRegistration() {
+  const token = await SecureStore.getItemAsync(LEGACY_TOKEN_KEY);
+  if (!token) return;
+  await api.post('/api/push/device/unregister', { token });
+  await SecureStore.deleteItemAsync(LEGACY_TOKEN_KEY);
+}
+
 /** Restores the saved on/off choice; call once at launch. */
 export async function restorePushPreference() {
   const saved = await SecureStore.getItemAsync(PREF_KEY).catch(() => null);
   setEnabled(saved !== 'off');
+  dropLegacyRegistration().catch(() => {});
 }
 
-/**
- * Registers this device for the daily suggestion. With `prompt`, asks for permission if
- * iOS hasn't asked yet. Returns false when notifications aren't allowed.
- */
-export async function registerForPush({ prompt }: { prompt: boolean }): Promise<boolean> {
+/** Asks iOS for permission if it hasn't asked yet. Resolves to whether notifications are allowed. */
+export async function requestNotificationPermission(): Promise<boolean> {
   let { status } = await Notifications.getPermissionsAsync();
-  if (status === 'undetermined' && prompt) {
-    ({ status } = await Notifications.requestPermissionsAsync());
+  if (status === 'undetermined') ({ status } = await Notifications.requestPermissionsAsync());
+  return status === 'granted';
+}
+
+export async function notificationsAllowed() {
+  return (await Notifications.getPermissionsAsync()).status === 'granted';
+}
+
+async function cancelScheduled() {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((n) => n.identifier.startsWith(ID_PREFIX))
+      .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+  );
+}
+
+function shuffled<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  if (status !== 'granted') return false;
-
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-  const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-  await api.put('/api/push/device', {
-    token,
-    dil: locale,
-    saat_dilimi: getCalendars()[0]?.timeZone ?? 'Europe/Istanbul',
-  });
-  await SecureStore.setItemAsync(TOKEN_KEY, token);
-  return true;
+  return copy;
 }
 
-/** Stops pushes to this device (sign-out, or the user switched them off). */
-export async function unregisterPush() {
-  const token = await SecureStore.getItemAsync(TOKEN_KEY);
-  if (!token) return;
-  await api.post('/api/push/device/unregister', { token });
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
+/** Replaces the scheduled suggestions with fresh picks for the coming evenings. */
+export async function rescheduleDailySuggestions(name: string | null) {
+  await cancelScheduled();
+  if (!enabled || !(await notificationsAllowed())) return;
+
+  const wishlist = CATEGORY_ORDER.flatMap((category: Category) =>
+    getLibraryItems(category)
+      .filter((i) => i.istek_mi && i.detail?.title)
+      .map((i) => ({ category, apiId: i.api_id, title: i.detail!.title })),
+  );
+  if (wishlist.length === 0) return;
+
+  // A different pick each evening while the list allows; repeats only once it runs out.
+  const picks = shuffled(wishlist);
+  const first = new Date();
+  first.setHours(SEND_HOUR, 0, 0, 0);
+  if (first <= new Date()) first.setDate(first.getDate() + 1);
+
+  for (let day = 0; day < DAYS_AHEAD; day++) {
+    const pick = picks[day % picks.length];
+    const date = new Date(first);
+    date.setDate(first.getDate() + day);
+    await Notifications.scheduleNotificationAsync({
+      identifier: `${ID_PREFIX}${day}`,
+      content: {
+        title: t.push.title(name),
+        body: t.push.body[pick.category](pick.title),
+        sound: 'default',
+        data: { url: `/${pick.category}/${encodeURIComponent(pick.apiId)}` },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date },
+    });
+  }
 }
 
-/** Runs after sign-in: re-registers every launch so the token, language and time zone stay current. */
-export async function syncPush() {
-  if (enabled) await registerForPush({ prompt: true });
+const RESCHEDULE_DEBOUNCE_MS = 1500;
+
+/** Keeps the scheduled suggestions in step with the library (and the greeting with the account). */
+export function useDailySuggestions(active: boolean, name: string | null) {
+  const libraries = useLibraries();
+  const loaded = libraries.games.items !== null;
+  const version = useLibraryVersion();
+  const on = usePushEnabled();
+
+  useEffect(() => {
+    if (!active || !loaded) return;
+    const timer = setTimeout(() => rescheduleDailySuggestions(name).catch(() => {}), RESCHEDULE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // `libraries` changes when a sync or a detail fetch brings in new titles.
+  }, [active, loaded, version, libraries, on, name]);
 }
 
-/** The account screen toggle. Resolves to false if iOS permission is denied. */
+/** The settings toggle. Resolves to false if iOS permission is denied. */
 export async function setPushEnabled(on: boolean): Promise<boolean> {
-  if (!on) {
-    setEnabled(false);
-    await SecureStore.setItemAsync(PREF_KEY, 'off');
-    await unregisterPush();
-    return true;
-  }
-  const granted = await registerForPush({ prompt: true });
-  setEnabled(granted);
-  await SecureStore.setItemAsync(PREF_KEY, granted ? 'on' : 'off');
-  return granted;
+  const granted = on ? await requestNotificationPermission() : false;
+  setEnabled(on && granted);
+  await SecureStore.setItemAsync(PREF_KEY, on && granted ? 'on' : 'off');
+  if (!on || !granted) await cancelScheduled();
+  return !on || granted;
 }
 
-// Remembered across sign-ins so a cold-start tap isn't replayed when someone signs in again.
+// Remembered so a cold-start tap isn't replayed when the navigator remounts.
 let handledResponseId: string | null = null;
 
 function openFromNotification(response: Notifications.NotificationResponse | null) {

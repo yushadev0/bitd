@@ -1,16 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { router, useSegments, type Href } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useState } from 'react';
 import { Alert } from 'react-native';
 
-import { libraryApi } from '@/api/endpoints';
 import type { Category } from '@/api/types';
 import { RandomAccessory } from '@/components/random-accessory';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES, CATEGORY_ORDER } from '@/lib/categories';
 import { t } from '@/lib/i18n';
-import { upsertItem } from '@/lib/library-store';
+import { getLibraryItems } from '@/lib/library-store';
 
 function isCategory(value: string | undefined): value is Category {
   return CATEGORY_ORDER.includes(value as Category);
@@ -21,25 +19,21 @@ function isCategory(value: string | undefined): value is Category {
 export default function TabsLayout() {
   const theme = useTheme();
   const segments = useSegments() as string[];
-  const [picking, setPicking] = useState(false);
 
   // Only offer the random pick on a category's grid, not on the dashboard or a detail page.
   const tab = segments[1];
   const category = isCategory(tab) && segments.length === 2 ? tab : null;
 
-  const pickRandom = async () => {
+  const pickRandom = () => {
     if (!category) return;
-    setPicking(true);
-    try {
-      const item = await libraryApi(category).random();
-      upsertItem(category, item);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      router.push(`/${category}/${encodeURIComponent(item.api_id)}` as Href);
-    } catch (e) {
-      Alert.alert(t.random.failed, e instanceof Error ? e.message : undefined);
-    } finally {
-      setPicking(false);
+    const wishlist = getLibraryItems(category).filter((i) => i.istek_mi);
+    if (wishlist.length === 0) {
+      Alert.alert(t.random.failed, t.random.empty(CATEGORIES[category].wishlistLabel));
+      return;
     }
+    const item = wishlist[Math.floor(Math.random() * wishlist.length)];
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push(`/${category}/${encodeURIComponent(item.api_id)}` as Href);
   };
 
   return (
@@ -48,7 +42,6 @@ export default function TabsLayout() {
         <NativeTabs.BottomAccessory>
           <RandomAccessory
             wishlistLabel={CATEGORIES[category].wishlistLabel}
-            picking={picking}
             onPick={pickRandom}
           />
         </NativeTabs.BottomAccessory>

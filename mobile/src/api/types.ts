@@ -53,22 +53,11 @@ export interface LibraryItem {
   detail: ItemDetail | null;
 }
 
-export interface DashboardStats {
-  total: number;
-  wishlist: number;
-}
-
-export interface DashboardResponse {
-  oyunlar: DashboardStats;
-  filmler: DashboardStats;
-  diziler: DashboardStats;
-  kitaplar: DashboardStats;
-}
-
-export interface RecentItem {
-  api_id: string;
-  title: string;
-  poster: string;
-}
-
 export type Category = 'games' | 'movies' | 'tv' | 'books';
+
+/** An item's state as the sync endpoints carry it (no detail). */
+export type SyncItem = Omit<LibraryItem, 'detail'>;
+
+export type SyncItemWrite = Omit<SyncItem, 'api_id'>;
+
+export type SyncLibrary = Record<Category, SyncItem[]>;

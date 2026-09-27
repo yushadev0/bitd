@@ -1,6 +1,6 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { SymbolView } from 'expo-symbols';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -8,28 +8,21 @@ import { t } from '@/lib/i18n';
 
 interface Props {
   wishlistLabel: string;
-  picking: boolean;
   onPick: () => void;
 }
 
-// Rendered twice by the system (regular + inline/minimized placements), so it must stay
-// stateless — `picking` lives in the tabs layout.
-export function RandomAccessory({ wishlistLabel, picking, onPick }: Props) {
+// Rendered twice by the system (regular + inline/minimized placements), so it must stay stateless.
+export function RandomAccessory({ wishlistLabel, onPick }: Props) {
   const theme = useTheme();
   const inline = NativeTabs.BottomAccessory.usePlacement() === 'inline';
 
   return (
     <Pressable
       onPress={onPick}
-      disabled={picking}
       accessibilityRole="button"
       accessibilityLabel={t.random.a11y(wishlistLabel)}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      {picking ? (
-        <ActivityIndicator />
-      ) : (
-        <SymbolView name="dice.fill" size={inline ? 18 : 22} tintColor={theme.accent} />
-      )}
+      <SymbolView name="dice.fill" size={inline ? 18 : 22} tintColor={theme.accent} />
       <View style={styles.text}>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
           {t.random.pick}

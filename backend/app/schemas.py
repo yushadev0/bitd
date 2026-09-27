@@ -97,6 +97,29 @@ class LibraryItem(BaseModel):
     detail: dict | None = None
 
 
+# ---------- Sync (native app's offline library) ----------
+class SyncItem(BaseModel):
+    api_id: str
+    istek_mi: bool
+    eklenme_tarihi: dt.datetime
+    bitirme_tarihi: dt.date | None
+    kisisel_not: str | None
+
+
+class SyncItemWrite(BaseModel):
+    istek_mi: bool
+    eklenme_tarihi: dt.datetime | None = None
+    bitirme_tarihi: dt.date | None = None
+    kisisel_not: str | None = Field(default=None, max_length=10_000)
+
+
+class SyncLibrary(BaseModel):
+    games: list[SyncItem]
+    movies: list[SyncItem]
+    tv: list[SyncItem]
+    books: list[SyncItem]
+
+
 class DashboardStats(BaseModel):
     total: int
     wishlist: int

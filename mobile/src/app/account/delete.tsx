@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -27,8 +28,9 @@ export default function DeleteAccountScreen() {
     try {
       await authApi.deleteAccount();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Dropping the session makes the auth guard swap everything out for the login screen.
+      // Also removes the library's copy from this phone; back to Settings, now without an account.
       await signOut();
+      router.back();
     } catch (e) {
       setBusy(false);
       Alert.alert(t.deleteAccount.failed, e instanceof Error ? e.message : undefined);

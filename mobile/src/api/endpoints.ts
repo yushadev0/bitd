@@ -1,13 +1,5 @@
 import { api } from './client';
-import type {
-  Category,
-  CurrentUser,
-  DashboardResponse,
-  LibraryItem,
-  RecentItem,
-  SearchResult,
-  TokenResponse,
-} from './types';
+import type { Category, CurrentUser, ItemDetail, SearchResult, SyncItemWrite, SyncLibrary, TokenResponse } from './types';
 
 export const authApi = {
   token: (kullanici_adi: string, sifre: string) =>
@@ -27,27 +19,21 @@ export const authApi = {
   deleteAccount: () => api.delete<void>('/api/auth/me'),
 };
 
-export function libraryApi(category: Category) {
-  const base = `/api/${category}`;
-  const item = (apiId: string) => `${base}/${encodeURIComponent(apiId)}`;
-  return {
-    search: (q: string) => api.get<SearchResult[]>(`${base}/search?q=${encodeURIComponent(q)}`),
-    list: () => api.get<LibraryItem[]>(base),
-    random: () => api.get<LibraryItem>(`${base}/random`),
-    add: (apiId: string, istekMi: boolean) => api.post<{ ok: boolean }>(base, { api_id: apiId, istek_mi: istekMi }),
-    updateStatus: (apiId: string, istekMi: boolean) =>
-      api.patch<{ ok: boolean }>(`${item(apiId)}/status`, { istek_mi: istekMi }),
-    updateDate: (apiId: string, date: string) =>
-      api.patch<{ ok: boolean }>(`${item(apiId)}/date`, { bitirme_tarihi: date }),
-    updateNote: (apiId: string, note: string) =>
-      api.patch<{ ok: boolean }>(`${item(apiId)}/note`, { kisisel_not: note }),
-    remove: (apiId: string) => api.delete<{ ok: boolean }>(item(apiId)),
-  };
-}
+// No session needed for these two: the app works without an account.
+export const catalogApi = {
+  search: (category: Category, q: string) =>
+    api.get<SearchResult[]>(`/api/${category}/search?q=${encodeURIComponent(q)}`),
 
-export const dashboardApi = {
-  stats: () => api.get<DashboardResponse>('/api/dashboard'),
-  recent: (category: Category) => api.get<RecentItem[]>(`/api/dashboard/recent/${category}`),
+  /** Up to 20 ids per call; items that couldn't be loaded are missing from the result. */
+  details: (category: Category, ids: string[]) =>
+    api.get<Record<string, ItemDetail>>(`/api/details/${category}?ids=${ids.map(encodeURIComponent).join(',')}`),
+};
+
+export const syncApi = {
+  library: () => api.get<SyncLibrary>('/api/library'),
+  put: (category: Category, apiId: string, item: SyncItemWrite) =>
+    api.put<void>(`/api/library/${category}/${encodeURIComponent(apiId)}`, item),
+  remove: (category: Category, apiId: string) => api.delete<void>(`/api/library/${category}/${encodeURIComponent(apiId)}`),
 };
 
 export const accountApi = {

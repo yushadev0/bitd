@@ -23,6 +23,7 @@ export default function LoginScreen() {
     setBusy(true);
     setError(null);
     try {
+      // On success this sheet closes by itself: the sign-in screens are only offered while signed out.
       await signIn(username.trim(), password);
     } catch (e) {
       setError(e instanceof Error ? e.message : t.auth.signInFailed);
@@ -39,6 +40,7 @@ export default function LoginScreen() {
         <View style={styles.brand}>
           <Text style={[styles.logo, { color: theme.accent }]}>B.I.T.D.</Text>
           <Text style={[styles.tagline, { color: theme.textSecondary }]}>Back In The Day</Text>
+          <Text style={[styles.intro, { color: theme.textSecondary }]}>{t.auth.signInIntro}</Text>
         </View>
 
         <View style={styles.form}>
@@ -91,6 +93,7 @@ const styles = StyleSheet.create({
   brand: { alignItems: 'center', gap: Spacing.one },
   logo: { fontSize: 44, fontWeight: '800', letterSpacing: 2, fontFamily: Fonts.rounded },
   tagline: { fontSize: 15, letterSpacing: 1 },
+  intro: { fontSize: 15, lineHeight: 21, textAlign: 'center', marginTop: Spacing.three },
   form: { gap: Spacing.three },
   link: { fontSize: 15, textAlign: 'center' },
   forgot: { fontSize: 15, textAlign: 'center', paddingVertical: Spacing.one },

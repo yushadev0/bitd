@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useSyncExternalStore } from 'react';
 import { Appearance } from 'react-native';
 
-import { api } from '@/api/client';
+import { api, hasStoredSession } from '@/api/client';
 import type { CurrentUser } from '@/api/types';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -28,7 +28,7 @@ export async function setThemePreference(pref: ThemePreference): Promise<Current
   apply(pref);
   await SecureStore.setItemAsync(KEY, pref);
   // The backend only knows light/dark (`tema`); keep the web app in step with explicit choices.
-  if (pref === 'system') return null;
+  if (pref === 'system' || !(await hasStoredSession())) return null;
   return api.patch<CurrentUser>('/api/account/theme', { tema: pref === 'dark' });
 }
 

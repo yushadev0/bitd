@@ -5,7 +5,7 @@ import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { libraryApi } from '@/api/endpoints';
+import { catalogApi } from '@/api/endpoints';
 import type { Category, SearchResult } from '@/api/types';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -37,7 +37,6 @@ export default function AddScreen() {
   const theme = useTheme();
   const { category } = useLocalSearchParams<{ category: Category }>();
   const meta = CATEGORIES[category];
-  const api = useMemo(() => libraryApi(category), [category]);
   const { items } = useLibrary(category);
 
   const [query, setQuery] = useState('');
@@ -56,8 +55,8 @@ export default function AddScreen() {
     if (q.length < 2) return;
     const timer = setTimeout(() => {
       setSearching(true);
-      api
-        .search(q)
+      catalogApi
+        .search(category, q)
         .then((r) => {
           if (id !== requestId.current) return;
           setResults(r);
@@ -67,13 +66,13 @@ export default function AddScreen() {
         .finally(() => id === requestId.current && setSearching(false));
     }, SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [query, api]);
+  }, [query, category]);
 
   const add = async (result: SearchResult) => {
     const istekMi = await chooseList(result.title, meta.completedLabel, meta.wishlistLabel);
     if (istekMi === null) return;
     try {
-      await libraryActions.add(category, result.api_id, istekMi);
+      await libraryActions.add(category, result, istekMi);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setJustAdded((s) => new Set(s).add(result.api_id));
     } catch (e) {

@@ -7,11 +7,13 @@ import { Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-nati
 
 import { API_ORIGIN } from '@/api/client';
 import { SettingsGroup, SettingsRow, SettingsSection } from '@/components/settings-list';
+import { describeSync } from '@/components/sync-status';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useTheme } from '@/hooks/use-theme';
-import { locale, t } from '@/lib/i18n';
+import { locale, localeTag, t } from '@/lib/i18n';
 import { setPushEnabled, usePushEnabled } from '@/lib/push';
+import { requestSync, useSyncStatus } from '@/lib/sync';
 import { setThemePreference, useThemePreference, type ThemePreference } from '@/lib/theme-preference';
 
 const PRIVACY_URL = `${API_ORIGIN}/bitd/privacy/?lang=${locale}`;
@@ -19,7 +21,9 @@ const VERSION = `${Application.nativeApplicationVersion ?? '?'} (${Application.n
 
 export default function AccountScreen() {
   const theme = useTheme();
-  const { user, signOut, setUser } = useAuth();
+  const { status, user, sessionExpired, signOut, setUser } = useAuth();
+  const sync = useSyncStatus();
+  const signedIn = status === 'signedIn';
   const themePreference = useThemePreference();
   const pushEnabled = usePushEnabled();
 
@@ -40,10 +44,16 @@ export default function AccountScreen() {
   };
 
   const confirmSignOut = () =>
-    Alert.alert(t.account.signOutConfirm, undefined, [
-      { text: t.common.cancel, style: 'cancel' },
-      { text: t.account.signOut, style: 'destructive', onPress: signOut },
-    ]);
+    Alert.alert(
+      t.account.signOutConfirm,
+      sync.pending > 0 ? t.account.signOutPending(sync.pending) : t.account.signOutConfirmBody,
+      [
+        { text: t.common.cancel, style: 'cancel' },
+        { text: t.account.signOut, style: 'destructive', onPress: signOut },
+      ],
+    );
+
+  const syncInfo = describeSync(sync.state, sync.pending, sync.lastSync);
 
   return (
     <>
@@ -55,12 +65,33 @@ export default function AccountScreen() {
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic">
-        <SettingsGroup>
-          <SettingsRow label={t.account.username} value={user?.kullanici_adi ?? ''} />
-          <SettingsRow label={t.account.email} value={user?.email ?? ''} />
-        </SettingsGroup>
+        {signedIn ? (
+          <>
+            <SettingsGroup>
+              <SettingsRow label={t.account.username} value={user?.kullanici_adi ?? ''} />
+              <SettingsRow label={t.account.email} value={user?.email ?? ''} />
+            </SettingsGroup>
 
-        <SettingsSection title={t.account.appearance} footer={t.account.themeFootnote}>
+            <SettingsSection title={t.account.sync.toLocaleUpperCase(localeTag)} footer={syncInfo.message}>
+              <SettingsGroup>
+                {sessionExpired ? (
+                  <SettingsRow label={t.account.signInAgain} accessory="chevron" onPress={() => router.push('/login')} />
+                ) : (
+                  <SettingsRow label={t.sync.syncNow} value={syncInfo.title} onPress={() => requestSync()} />
+                )}
+              </SettingsGroup>
+            </SettingsSection>
+          </>
+        ) : (
+          <SettingsSection title={t.account.accountSection} footer={t.account.guestFootnote}>
+            <SettingsGroup>
+              <SettingsRow label={t.account.signIn} accessory="chevron" onPress={() => router.push('/login')} />
+              <SettingsRow label={t.account.createAccount} accessory="chevron" onPress={() => router.push('/register')} />
+            </SettingsGroup>
+          </SettingsSection>
+        )}
+
+        <SettingsSection title={t.account.appearance} footer={signedIn ? t.account.themeFootnote : undefined}>
           <View style={[styles.pickerGroup, { backgroundColor: theme.backgroundElement }]}>
             <Host matchContents={{ vertical: true }} style={styles.stretch}>
               <Picker
@@ -86,9 +117,11 @@ export default function AccountScreen() {
           </SettingsGroup>
         </SettingsSection>
 
-        <SettingsGroup>
-          <SettingsRow label={t.account.signOut} onPress={confirmSignOut} destructive />
-        </SettingsGroup>
+        {signedIn ? (
+          <SettingsGroup>
+            <SettingsRow label={t.account.signOut} onPress={confirmSignOut} destructive />
+          </SettingsGroup>
+        ) : null}
 
         <SettingsSection title={t.account.about}>
           <SettingsGroup>
@@ -99,12 +132,14 @@ export default function AccountScreen() {
             />
             <SettingsRow label={t.account.dataSources} accessory="chevron" onPress={() => router.push('/account/credits')} />
             <SettingsRow label={t.account.version} value={VERSION} />
-            <SettingsRow
-              label={t.account.deleteAccount}
-              accessory="chevron"
-              destructive
-              onPress={() => router.push('/account/delete')}
-            />
+            {signedIn ? (
+              <SettingsRow
+                label={t.account.deleteAccount}
+                accessory="chevron"
+                destructive
+                onPress={() => router.push('/account/delete')}
+              />
+            ) : null}
           </SettingsGroup>
         </SettingsSection>
       </ScrollView>

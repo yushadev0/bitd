@@ -5,38 +5,48 @@ import { useColorScheme } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/context/auth';
 import { t } from '@/lib/i18n';
-import { restorePushPreference, syncPush, useNotificationDeepLinks } from '@/lib/push';
+import { restoreOnboarding, useOnboarded } from '@/lib/onboarding';
+import { restorePushPreference, useDailySuggestions, useNotificationDeepLinks } from '@/lib/push';
 import { restoreThemePreference } from '@/lib/theme-preference';
 
 SplashScreen.preventAutoHideAsync();
-// Resolves long before the session refresh round-trip that holds the splash screen.
+// All local reads; the splash screen stays up only until they (and the library) are in.
 restoreThemePreference();
 restorePushPreference();
+restoreOnboarding();
 
 function RootNavigator() {
-  const { status } = useAuth();
+  const { status, user, sessionExpired } = useAuth();
+  const onboarded = useOnboarded();
+  const ready = status !== 'loading' && onboarded !== null;
 
   useEffect(() => {
-    if (status !== 'loading') SplashScreen.hideAsync();
-    // Asks for notification permission the first time; afterwards just refreshes the registration.
-    if (status === 'signedIn') syncPush().catch(() => {});
-  }, [status]);
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
 
-  useNotificationDeepLinks(status === 'signedIn');
+  useNotificationDeepLinks(ready && onboarded === true);
+  useDailySuggestions(ready, user?.kullanici_adi ?? null);
 
-  // The splash screen stays up while the stored session is being restored.
-  if (status === 'loading') return null;
+  if (!ready) return null;
 
-  const signedIn = status === 'signedIn';
+  // Nothing here needs an account: the sign-in screens are sheets that can be opened any
+  // time (from the introduction or from Settings) and close themselves once signed in.
+  const canSignIn = status !== 'signedIn' || sessionExpired;
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={signedIn}>
+      <Stack.Protected guard={onboarded}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="account" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add" options={{ presentation: 'modal', headerShown: true }} />
       </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="login" />
+      <Stack.Protected guard={!onboarded}>
+        <Stack.Screen name="onboarding" />
+      </Stack.Protected>
+      <Stack.Protected guard={canSignIn}>
+        <Stack.Screen
+          name="login"
+          options={{ presentation: 'modal', headerShown: true, title: t.auth.signIn }}
+        />
         <Stack.Screen
           name="register"
           options={{ presentation: 'modal', headerShown: true, title: t.auth.registerTitle }}

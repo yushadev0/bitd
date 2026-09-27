@@ -65,3 +65,7 @@ reset_code_failures_per_ip = RateLimiter(limit=20, window_seconds=60 * 60)
 # Failed sign-ins (web cookie login and native token login share these).
 login_failures_per_username = RateLimiter(limit=10, window_seconds=15 * 60)
 login_failures_per_ip = RateLimiter(limit=30, window_seconds=15 * 60)
+
+# Public item details (the app without an account). Each call can fan out to 20 upstream
+# fetches, so this mostly guards our TMDB / IGDB / Google Books quotas.
+details_per_ip = RateLimiter(limit=120, window_seconds=10 * 60)

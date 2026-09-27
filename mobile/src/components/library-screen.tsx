@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES } from '@/lib/categories';
 import { localeTag, t } from '@/lib/i18n';
 import { loadLibrary, useLibrary } from '@/lib/library-store';
+import { refreshLibrary } from '@/lib/sync';
 
 // Three posters on a phone, more as the window widens (iPad, landscape, Stage Manager).
 const MIN_COLUMNS = 3;
@@ -55,14 +56,14 @@ export function LibraryScreen({ category }: { category: Category }) {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    loadLibrary(category);
-  }, [category]);
+    loadLibrary();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadLibrary(category);
+    await refreshLibrary();
     setRefreshing(false);
-  }, [category]);
+  }, []);
 
   const sections = useMemo<Section[]>(() => {
     const needle = query.trim().toLocaleLowerCase(localeTag);
@@ -109,7 +110,7 @@ export function LibraryScreen({ category }: { category: Category }) {
           {error ? (
             <>
               <Text style={[styles.message, { color: theme.textSecondary }]}>{error}</Text>
-              <Pressable onPress={() => loadLibrary(category)} hitSlop={12}>
+              <Pressable onPress={() => loadLibrary()} hitSlop={12}>
                 <Text style={[styles.retry, { color: theme.accent }]}>{t.common.retry}</Text>
               </Pressable>
             </>

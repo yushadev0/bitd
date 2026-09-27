@@ -1,36 +1,27 @@
-import { Stack, router, useFocusEffect, type Href } from 'expo-router';
+import { Stack, router, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { useCallback, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
-import { dashboardApi } from '@/api/endpoints';
-import type { Category, DashboardResponse, RecentItem } from '@/api/types';
+import type { Category, LibraryItem } from '@/api/types';
 import { PosterCard } from '@/components/poster-card';
+import { useSyncIndicator } from '@/components/sync-status';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES, CATEGORY_ORDER } from '@/lib/categories';
 import { t } from '@/lib/i18n';
-import { useLibraryVersion } from '@/lib/library-store';
-
-type Recent = Partial<Record<Category, RecentItem[]>>;
+import { useLibraries } from '@/lib/library-store';
+import { refreshLibrary } from '@/lib/sync';
 
 // Past this width the four stat cards fit on one row.
 const WIDE_LAYOUT = 700;
+const RECENT_COUNT = 5;
 
-function StatCard({ category, stats, wide }: { category: Category; stats: DashboardResponse | null; wide: boolean }) {
+function StatCard({ category, items, wide }: { category: Category; items: LibraryItem[] | null; wide: boolean }) {
   const theme = useTheme();
   const meta = CATEGORIES[category];
-  const s = stats?.[meta.statsKey];
+  const wishlist = items?.filter((i) => i.istek_mi).length ?? 0;
 
   return (
     <Pressable
@@ -42,11 +33,9 @@ function StatCard({ category, stats, wide }: { category: Category; stats: Dashbo
         { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
       ]}>
       <SymbolView name={meta.iconSelected} tintColor={theme.accent} size={22} />
-      <Text style={[styles.statNumber, { color: theme.text }]}>{s ? s.total - s.wishlist : '–'}</Text>
+      <Text style={[styles.statNumber, { color: theme.text }]}>{items ? items.length - wishlist : '–'}</Text>
       <Text style={[styles.statLabel, { color: theme.text }]}>{meta.title}</Text>
-      <Text style={[styles.statSub, { color: theme.textSecondary }]}>
-        {s ? t.home.waiting(s.wishlist) : ' '}
-      </Text>
+      <Text style={[styles.statSub, { color: theme.textSecondary }]}>{items ? t.home.waiting(wishlist) : ' '}</Text>
     </Pressable>
   );
 }
@@ -55,45 +44,23 @@ export default function HomeScreen() {
   const theme = useTheme();
   const { user } = useAuth();
   const wide = useWindowDimensions().width >= WIDE_LAYOUT;
-
-  const [stats, setStats] = useState<DashboardResponse | null>(null);
-  const [recent, setRecent] = useState<Recent>({});
+  const libraries = useLibraries();
+  const sync = useSyncIndicator();
   const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    // Stats and each category's recent strip load independently so one slow
-    // upstream API (IGDB, TMDB…) doesn't hold back the rest.
-    const statsP = dashboardApi.stats().then(setStats);
-    const recentP = CATEGORY_ORDER.map((c) =>
-      dashboardApi.recent(c).then((items) => setRecent((r) => ({ ...r, [c]: items }))),
-    );
-    await Promise.allSettled([statsP, ...recentP]);
-  }, []);
-
-  // Refetch when this tab comes back into view after something changed elsewhere
-  // (an item added, moved or deleted), instead of on every mutation in the background.
-  const version = useLibraryVersion();
-  const loadedVersion = useRef<number | null>(null);
-  useFocusEffect(
-    useCallback(() => {
-      if (loadedVersion.current === version) return;
-      loadedVersion.current = version;
-      load();
-    }, [version, load]),
-  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load();
+    await refreshLibrary();
     setRefreshing(false);
-  }, [load]);
+  }, []);
 
   return (
     <>
       <Stack.Screen options={{ title: user ? t.home.greeting(user.kullanici_adi) : t.home.tab }} />
       <Stack.Toolbar placement="right">
+        {sync ? <Stack.Toolbar.Button icon={sync.icon} accessibilityLabel={sync.label} onPress={sync.onPress} /> : null}
         <Stack.Toolbar.Button
-          icon="person.crop.circle"
+          icon="gearshape"
           accessibilityLabel={t.account.title}
           onPress={() => router.push('/account')}
         />
@@ -105,31 +72,28 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={styles.grid}>
           {CATEGORY_ORDER.map((c) => (
-            <StatCard key={c} category={c} stats={stats} wide={wide} />
+            <StatCard key={c} category={c} items={libraries[c].items} wide={wide} />
           ))}
         </View>
 
         {CATEGORY_ORDER.map((c) => {
-          const items = recent[c];
-          if (items && items.length === 0) return null;
+          // Newest first, as stored.
+          const recent = libraries[c].items?.slice(0, RECENT_COUNT) ?? [];
+          if (recent.length === 0) return null;
           return (
             <View key={c} style={styles.recentSection}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.home.recent(CATEGORIES[c].title)}</Text>
-              {items ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-                  {items.map((item) => (
-                    <PosterCard
-                      key={item.api_id}
-                      title={item.title}
-                      poster={item.poster}
-                      width={110}
-                      onPress={() => router.push(`/${c}/${encodeURIComponent(item.api_id)}` as Href)}
-                    />
-                  ))}
-                </ScrollView>
-              ) : (
-                <ActivityIndicator style={styles.stripLoading} />
-              )}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+                {recent.map((item) => (
+                  <PosterCard
+                    key={item.api_id}
+                    title={item.detail?.title ?? '?'}
+                    poster={item.detail?.poster}
+                    width={110}
+                    onPress={() => router.push(`/${c}/${encodeURIComponent(item.api_id)}` as Href)}
+                  />
+                ))}
+              </ScrollView>
             </View>
           );
         })}
@@ -164,5 +128,4 @@ const styles = StyleSheet.create({
   recentSection: { marginTop: Spacing.four, gap: Spacing.two },
   sectionTitle: { fontSize: 20, fontWeight: '700', paddingHorizontal: Spacing.three },
   strip: { paddingHorizontal: Spacing.three, gap: Spacing.three },
-  stripLoading: { height: 190 },
 });

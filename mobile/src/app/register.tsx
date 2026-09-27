@@ -26,7 +26,7 @@ export default function RegisterScreen() {
     setBusy(true);
     setError(null);
     try {
-      // On success the auth guard swaps this modal out for the tabs.
+      // On success the sign-in sheets close by themselves.
       await register({ ...form, kullanici_adi: form.kullanici_adi.trim(), email: form.email.trim() });
     } catch (e) {
       setError(e instanceof Error ? e.message : t.auth.registerFailed);

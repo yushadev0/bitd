@@ -13,7 +13,7 @@ from app.config import get_settings
 from app.database import Base, engine
 from app.i18n import set_lang_from_header, translate_error
 from app.push import scheduler
-from app.routers import account, auth, books, dashboard, games, movies, proxy, push, tv
+from app.routers import account, auth, books, dashboard, games, library, movies, proxy, push, tv
 
 settings = get_settings()
 logging.basicConfig(level=logging.INFO)
@@ -72,6 +72,7 @@ app.include_router(games.router)
 app.include_router(movies.router)
 app.include_router(tv.router)
 app.include_router(books.router)
+app.include_router(library.router)
 app.include_router(proxy.router)
 app.include_router(push.router)
 

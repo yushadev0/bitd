@@ -1,5 +1,7 @@
 import { getLocales } from 'expo-localization';
 
+import type { Category } from '@/api/types';
+
 // Turkish when the device (or the per-app language in iOS Settings) prefers Turkish,
 // English otherwise. iOS relaunches the app when that setting changes, so reading it
 // once at startup is enough.
@@ -34,6 +36,7 @@ const tr = {
     passwordsMismatch: 'Şifreler eşleşmiyor.',
     requestFailed: (status: number) => `İstek başarısız (${status}).`,
     invalidInput: 'Girdiğin bilgileri kontrol et.',
+    offline: 'İnternet bağlantısı yok.',
   },
   auth: {
     username: 'Kullanıcı adı',
@@ -59,6 +62,8 @@ const tr = {
     updatePassword: 'Şifreyi Güncelle',
     passwordUpdated: 'Şifren güncellendi',
     passwordUpdatedBody: 'Yeni şifrenle giriş yapabilirsin.',
+    signInIntro:
+      'Giriş yaptığında kütüphanen hesabına yedeklenir ve web sürümüyle senkronize olur. Bu cihazda eklediklerin de hesabına aktarılır.',
   },
   home: {
     tab: 'Özet',
@@ -77,6 +82,7 @@ const tr = {
     from: (list: string) => `${list} içinden`,
     a11y: (list: string) => `${list} içinden rastgele seç`,
     failed: 'Seçilemedi',
+    empty: (list: string) => `${list} boş. Önce birkaç şey ekle.`,
   },
   add: {
     addTo: (list: string) => `${list} bölümüne ekle`,
@@ -112,7 +118,17 @@ const tr = {
     screenshots: 'Ekran Görüntüleri',
   },
   account: {
-    title: 'Hesap',
+    title: 'Ayarlar',
+    accountSection: 'HESAP',
+    guestFootnote:
+      'BITD’yi kullanmak için hesap gerekmez; kütüphanen bu cihazda saklanır. Hesap açarsan kütüphanen yedeklenir ve web sürümüyle senkronize olur.',
+    signIn: 'Giriş Yap',
+    createAccount: 'Hesap Oluştur',
+    sync: 'Senkronizasyon',
+    signInAgain: 'Tekrar Giriş Yap',
+    signOutConfirmBody: 'Kütüphanenin bu cihazdaki kopyası silinir; hesabında ve web sürümünde durmaya devam eder.',
+    signOutPending: (count: number) =>
+      `${count} değişiklik henüz sunucuya gönderilmedi. Şimdi çıkış yaparsan bu değişiklikler kaybolur.`,
     username: 'Kullanıcı adı',
     email: 'E-posta',
     appearance: 'GÖRÜNÜM',
@@ -133,6 +149,50 @@ const tr = {
     notificationsDenied: 'Bildirimler kapalı',
     notificationsDeniedBody: 'BITD’nin bildirim göndermesine Ayarlar’dan izin verebilirsin.',
     openSettings: 'Ayarları Aç',
+  },
+  sync: {
+    a11y: 'Senkronizasyon durumu',
+    synced: 'Senkronize',
+    syncing: 'Senkronize ediliyor…',
+    offline: 'Çevrimdışı',
+    error: 'Senkronize edilemedi',
+    expired: 'Oturumun sona erdi',
+    lastSync: (time: string) => `Son senkronizasyon: ${time}`,
+    never: 'Henüz senkronize edilmedi.',
+    pending: (count: number) => `${count} değişiklik gönderilmeyi bekliyor.`,
+    offlineBody: 'Değişikliklerin bu cihazda saklanıyor; internet bağlantısı gelince otomatik olarak gönderilecek.',
+    errorBody: 'Sunucuya şu an ulaşılamıyor; birazdan kendiliğinden tekrar denenecek.',
+    expiredBody: 'Senkronizasyona devam etmek için tekrar giriş yap. Değişikliklerin bu cihazda duruyor.',
+    syncNow: 'Şimdi Senkronize Et',
+  },
+  push: {
+    title: (name: string | null) => (name ? `Hey, ${name}!` : 'Bu akşam ne yapsan?'),
+    body: {
+      games: (title: string) => `Bugün ${title} oynamaya ne dersin?`,
+      movies: (title: string) => `Bugün ${title} izlemeye ne dersin?`,
+      tv: (title: string) => `Bugün ${title} izlemeye ne dersin?`,
+      books: (title: string) => `Bugün ${title} okumaya ne dersin?`,
+    } satisfies Record<Category, (title: string) => string>,
+  },
+  onboarding: {
+    skip: 'Atla',
+    next: 'Devam',
+    start: 'Başla',
+    haveAccount: 'Hesabım var, giriş yap',
+    welcomeTitle: 'B.I.T.D.’ye hoş geldin',
+    welcomeBody: 'Oynadığın oyunları, izlediğin film ve dizileri, okuduğun kitapları tek bir arşivde topla.',
+    shelvesTitle: 'Dört raf, tek arşiv',
+    shelvesBody: 'Her sekmenin sağ üstündeki + ile ara ve ekle. Bitirdiğin tarihi ve kendi notunu da sakla.',
+    randomTitle: 'Kararsız kaldığında zar at',
+    randomBody:
+      'Sonraya bıraktıklarını istek listesinde biriktir. Ne yapacağını seçemediğinde alttaki zar listenden rastgele birini seçer.',
+    notifyTitle: 'Her akşam bir öneri',
+    notifyBody:
+      'İstersen her akşam listende bekleyenlerden birini hatırlatalım. Bunu daha sonra Ayarlar’dan değiştirebilirsin.',
+    allowNotifications: 'Bildirimlere İzin Ver',
+    notificationsOn: 'Bildirimler açık',
+    noAccountNeeded:
+      'Hesap gerekmez: kütüphanen bu cihazda saklanır. İstersen daha sonra hesap açıp web sürümüyle senkronize edebilirsin.',
   },
   credits: {
     intro: 'B.I.T.D. içerik bilgilerini ve görselleri aşağıdaki servislerden alır.',
@@ -210,6 +270,7 @@ const en: Strings = {
     passwordsMismatch: 'Passwords don’t match.',
     requestFailed: (status: number) => `Request failed (${status}).`,
     invalidInput: 'Please check the details you entered.',
+    offline: 'You’re offline.',
   },
   auth: {
     username: 'Username',
@@ -235,6 +296,8 @@ const en: Strings = {
     updatePassword: 'Update Password',
     passwordUpdated: 'Password updated',
     passwordUpdatedBody: 'You can now sign in with your new password.',
+    signInIntro:
+      'Signing in backs up your library to your account and keeps it in sync with the web app. Anything you added on this device moves to your account too.',
   },
   home: {
     tab: 'Overview',
@@ -253,6 +316,7 @@ const en: Strings = {
     from: (list: string) => `From your ${list}`,
     a11y: (list: string) => `Pick at random from your ${list}`,
     failed: 'Couldn’t pick',
+    empty: (list: string) => `Your ${list} is empty. Add a few things first.`,
   },
   add: {
     addTo: (list: string) => `Add to ${list}`,
@@ -288,7 +352,19 @@ const en: Strings = {
     screenshots: 'Screenshots',
   },
   account: {
-    title: 'Account',
+    title: 'Settings',
+    accountSection: 'ACCOUNT',
+    guestFootnote:
+      'You don’t need an account to use BITD; your library is stored on this device. With an account, it’s backed up and kept in sync with the web app.',
+    signIn: 'Sign In',
+    createAccount: 'Create Account',
+    sync: 'Sync',
+    signInAgain: 'Sign In Again',
+    signOutConfirmBody: 'The copy of your library on this device is removed; it stays in your account and on the web.',
+    signOutPending: (count: number) =>
+      count === 1
+        ? '1 change hasn’t been sent to the server yet. If you sign out now, it will be lost.'
+        : `${count} changes haven’t been sent to the server yet. If you sign out now, they will be lost.`,
     username: 'Username',
     email: 'Email',
     appearance: 'APPEARANCE',
@@ -309,6 +385,51 @@ const en: Strings = {
     notificationsDenied: 'Notifications are off',
     notificationsDeniedBody: 'You can allow BITD to send notifications in Settings.',
     openSettings: 'Open Settings',
+  },
+  sync: {
+    a11y: 'Sync status',
+    synced: 'Synced',
+    syncing: 'Syncing…',
+    offline: 'Offline',
+    error: 'Couldn’t sync',
+    expired: 'Your session has ended',
+    lastSync: (time: string) => `Last synced: ${time}`,
+    never: 'Not synced yet.',
+    pending: (count: number) =>
+      count === 1 ? '1 change is waiting to be sent.' : `${count} changes are waiting to be sent.`,
+    offlineBody: 'Your changes are saved on this device and will be sent automatically once you’re back online.',
+    errorBody: 'The server can’t be reached right now; it will try again shortly on its own.',
+    expiredBody: 'Sign in again to keep syncing. Your changes are safe on this device.',
+    syncNow: 'Sync Now',
+  },
+  push: {
+    title: (name: string | null) => (name ? `Hey ${name}!` : 'What’s it going to be tonight?'),
+    body: {
+      games: (title: string) => `How about playing ${title} today?`,
+      movies: (title: string) => `How about watching ${title} today?`,
+      tv: (title: string) => `How about watching ${title} today?`,
+      books: (title: string) => `How about reading ${title} today?`,
+    },
+  },
+  onboarding: {
+    skip: 'Skip',
+    next: 'Continue',
+    start: 'Get Started',
+    haveAccount: 'I have an account — sign in',
+    welcomeTitle: 'Welcome to B.I.T.D.',
+    welcomeBody: 'Keep the games you’ve played, the movies and shows you’ve watched and the books you’ve read in one archive.',
+    shelvesTitle: 'Four shelves, one archive',
+    shelvesBody: 'Search and add with the + at the top of each tab. Keep the date you finished and a note of your own.',
+    randomTitle: 'Can’t decide? Roll the dice',
+    randomBody:
+      'Save what you’d like to get to on your wishlist. When you can’t choose, the dice at the bottom picks one for you.',
+    notifyTitle: 'A suggestion every evening',
+    notifyBody:
+      'If you like, we’ll remind you of something waiting on your lists every evening. You can change this later in Settings.',
+    allowNotifications: 'Allow Notifications',
+    notificationsOn: 'Notifications are on',
+    noAccountNeeded:
+      'No account needed: your library is stored on this device. You can create one later to sync with the web app.',
   },
   credits: {
     intro: 'B.I.T.D. gets its titles, details and artwork from the services below.',
