@@ -1,0 +1,28 @@
+{
+  "name": "B.I.T.D.",
+  "year": 2026,
+  "frame": "window",
+  "stack": [
+    "React",
+    "TypeScript",
+    "FastAPI",
+    "PostgreSQL",
+    "Docker"
+  ],
+  "demo": "https://yusa.app/bitd/",
+  "tagline": {
+    "en": "Everything you play, watch and read, on one shelf.",
+    "tr": "Oynadığınız, izlediğiniz ve okuduğunuz her şey tek rafta."
+  },
+  "body": {
+    "en": [
+      "A personal archive for games, movies, TV shows and books, with a wishlist, a finished list, notes and finish dates. When you can't decide, a daily randomizer picks something from your wishlist.",
+      "It started as a Delphi and UniGUI app. I rewrote it as React and FastAPI, keeping the same database tables so existing data carries over. Metadata comes live from TMDB, IGDB and Google Books."
+    ],
+    "tr": [
+      "Oyunlar, filmler, diziler ve kitaplar için kişisel bir arşiv: istek listesi, bitirilenler, notlar ve bitirme tarihleri. Karar veremediğinizde günlük rastgele seçici istek listenizden bir şey önerir.",
+      "İlk olarak Delphi ve UniGUI ile yazmıştım. Aynı veritabanı tablolarını koruyarak React ve FastAPI ile baştan yazdım, böylece eski veriler olduğu gibi taşındı. Bilgiler TMDB, IGDB ve Google Books'tan canlı geliyor."
+    ]
+  },
+  "cover": "showcase-cover.webp"
+}
